@@ -1,48 +1,82 @@
-import time
+from winpcapy import WinPcapDevices
+from winpcapy import WinPcapUtils
 
 import dpkt
-from winpcapy import WinPcapUtils
-from winpcapy import WinPcapDevices
+import time
+import datetime, sys
 
 
 def packet_callback(win_pcap, param, header, pkt_data):
     eth = dpkt.ethernet.Ethernet(pkt_data)
 
-    # smac = eth.src
-    # dmac = eth.dst
-    type = eth.type
-    # print(smac, dmac, type)
+    parse_layer1(eth)
 
-    dmac = "-".join(["%02x" % (b) for b in pkt_data[0:6]])
-    smac = "-".join(["%02x" % (b) for b in pkt_data[6:12]])
 
-    # # 判断是否为IP数据报
-    if not isinstance(eth.data, dpkt.ip.IP):
-        print("Non IP packet type not supported ", eth.data.__class__.__name__)
-        return
-    # 抓IP数据包
-    packet = eth.data
-    # 取出分片信息
-    df = bool(packet.off & dpkt.ip.IP_DF)
-    mf = bool(packet.off & dpkt.ip.IP_MF)
-    offset = packet.off & dpkt.ip.IP_OFFMASK
+def parse_layer1(eth):  # 数据链路层
+    # 分片
+    # dmac = "-".join(["%02x" % (b) for b in pkt_data[0:6]])
+    # smac = "-".join(["%02x" % (b) for b in pkt_data[6:12]])
 
-    # 输出数据包信息：time,smac,dmac,src,dst,protocol,length,ttl,df,mf,offset,checksum
+    smac = "-".join(["%02x" % (b) for b in eth.src])
+    dmac = "-".join(["%02x" % (b) for b in eth.dst])
+    packet_type = type(eth)  # Ethernet
+
+    # 输出数据包信息
     output1 = {'time': time.strftime('%Y-%m-%d %H:%M:%S', (time.localtime()))}
-    output0 = {'smac': smac, 'dmac': dmac}
-    output2 = {'src': '%d.%d.%d.%d' % tuple(packet.src), 'dst': '%d.%d.%d.%d' % tuple(packet.dst)}
-    output3 = {'protocol': packet.p, 'len': packet.len, 'ttl': packet.ttl}
-    output4 = {'df': df, 'mf': mf, 'offset': offset, 'checksum': packet.sum}
+    output2 = {'type': packet_type}
+    output3 = {'smac': smac, 'dmac': dmac}
     print()
     print(output1)
-    print(output0)
     print(output2)
     print(output3)
-    print(output4)
+
+    parse_layer2(eth.data)
+
+
+def parse_layer2(packet):  # 网络层
+    packet_type = type(packet)  # IP
+
+    # 判断数据报类型
+    if isinstance(packet, dpkt.ip.IP):  # IP数据报
+        # 取出分片信息
+        src = packet.src
+        dst = packet.dst
+        packet_len = packet.len  # 首部+数据
+        id = packet.id
+        df = bool(packet.off & dpkt.ip.IP_DF)  # don't fragment
+        mf = bool(packet.off & dpkt.ip.IP_MF)  # more fragments (not last frag)
+        offset = packet.off & dpkt.ip.IP_OFFMASK
+        ttl = packet.ttl
+        protocol = packet.p  # tcp udp
+        checksum = packet.sum
+
+        # 输出数据包信息
+        output1 = {'type': packet_type}
+        output2 = {'src': '%d.%d.%d.%d' % tuple(src), 'dst': '%d.%d.%d.%d' % tuple(dst)}
+        output3 = {'id': id, 'len': packet_len}
+        output4 = {'df': df, 'mf': mf, 'offset': offset}
+        output5 = {'ttl': ttl}
+        output6 = {'protocol': protocol}
+        output7 = {'checksum': checksum}
+        print(output1)
+        print(output2)
+        print(output3)
+        print(output4)
+        print(output5)
+        print(output6)
+        print(output7)
+    else:
+        print("Non IP packet type not supported ", packet.__class__.__name__)
+
+    parse_layer3(packet.data)
+
+
+def parse_layer3(packet):
+    return
 
 
 if __name__ == '__main__':
-    # Return a list of all the devices detected on the machine
+    # Return a list(dict) of all the devices detected on the machine
     devices_dict = WinPcapDevices.list_devices()
     # print(devices_dict)
     devices_list = []
