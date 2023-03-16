@@ -5,8 +5,19 @@ import dpkt
 import time
 import datetime, sys
 
+frame_index = 0
+
 
 def packet_callback(win_pcap, param, header, pkt_data):
+    global frame_index
+    frame_index += 1
+
+    output1 = {'Frame': frame_index}
+    output2 = {'time': time.strftime('%Y-%m-%d %H:%M:%S', (time.localtime()))}
+    print()
+    print(output1)
+    print(output2)
+
     eth = dpkt.ethernet.Ethernet(pkt_data)
 
     parse_layer1(eth)
@@ -20,12 +31,12 @@ def parse_layer1(eth):  # 数据链路层
     smac = "-".join(["%02x" % (b) for b in eth.src])
     dmac = "-".join(["%02x" % (b) for b in eth.dst])
     packet_type = type(eth)  # Ethernet
+    data_protocol = eth.type
 
     # 输出数据包信息
-    output1 = {'time': time.strftime('%Y-%m-%d %H:%M:%S', (time.localtime()))}
-    output2 = {'type': packet_type}
-    output3 = {'smac': smac, 'dmac': dmac}
-    print()
+    output1 = packet_type
+    output2 = {'smac': smac, 'dmac': dmac}
+    output3 = {'type': data_protocol}
     print(output1)
     print(output2)
     print(output3)
@@ -41,18 +52,26 @@ def parse_layer2(packet):  # 网络层
         # 取出分片信息
         src = packet.src
         dst = packet.dst
+        version = packet.v
+        head_len = packet.hl
+        type_of_service = packet.tos
         packet_len = packet.len  # 首部+数据
         id = packet.id
-        df = bool(packet.off & dpkt.ip.IP_DF)  # don't fragment
-        mf = bool(packet.off & dpkt.ip.IP_MF)  # more fragments (not last frag)
-        offset = packet.off & dpkt.ip.IP_OFFMASK
+        # df = bool(packet.off & dpkt.ip.IP_DF)  # don't fragment
+        # mf = bool(packet.off & dpkt.ip.IP_MF)  # more fragments (not last frag)
+        # offset = packet.off & dpkt.ip.IP_OFFMASK
+        df = packet.df  # don't fragment
+        mf = packet.mf  # more fragments (not last frag)
+        offset = packet.offset
         ttl = packet.ttl
         protocol = packet.p  # tcp udp
         checksum = packet.sum
 
         # 输出数据包信息
-        output1 = {'type': packet_type}
+        output1 = {'type': packet_type, 'version': version}
         output2 = {'src': '%d.%d.%d.%d' % tuple(src), 'dst': '%d.%d.%d.%d' % tuple(dst)}
+        output8 = {'head len': head_len}
+        output9 = {'Type of service': type_of_service}
         output3 = {'id': id, 'len': packet_len}
         output4 = {'df': df, 'mf': mf, 'offset': offset}
         output5 = {'ttl': ttl}
@@ -60,6 +79,8 @@ def parse_layer2(packet):  # 网络层
         output7 = {'checksum': checksum}
         print(output1)
         print(output2)
+        print(output8)
+        print(output9)
         print(output3)
         print(output4)
         print(output5)
@@ -71,7 +92,60 @@ def parse_layer2(packet):  # 网络层
     parse_layer3(packet.data)
 
 
-def parse_layer3(packet):
+def parse_layer3(packet):  # 传输层
+    packet_type = type(packet)  # TCP
+
+    # 判断数据报类型
+    if isinstance(packet, dpkt.tcp.TCP):  # 解包，判断传输层协议是否是TCP，即当你只需要TCP时，可用来过滤
+        sport = packet.sport
+        dport = packet.dport
+        seq = packet.seq
+        ack = packet.ack
+        offset = packet.off
+        flags = packet.flags
+        window_size = packet.win
+        urp = packet.urp
+        opts = packet.opts
+        opts = dpkt.tcp.parse_opts(opts)
+
+        # 输出数据包信息
+        output1 = {'type': packet_type}
+        output2 = {'sport': sport, 'dport': dport}
+        output3 = {'seq': seq, 'ack': ack}
+        output7 = {'offset': offset}
+        output4 = {'flags': flags, 'window': window_size}
+        output5 = {'urgent pointer': urp}
+        output6 = {'options': opts}
+        print(output1)
+        print(output2)
+        print(output3)
+        print(output7)
+        print(output4)
+        print(output5)
+        print(output6)
+    elif isinstance(packet, dpkt.udp.UDP):  # UDP
+        sport = packet.sport
+        dport = packet.dport
+        ulen = packet.ulen
+        checksum = packet.sum
+
+        # 输出数据包信息
+        output1 = {'type': packet_type}
+        output2 = {'sport': sport, 'dport': dport}
+        output3 = {'length': ulen}
+        output4 = {'checksum': checksum}
+        print(output1)
+        print(output2)
+        print(output3)
+        print(output4)
+    else:
+        print("Non TCP/UDP packet type not supported ", packet.__class__.__name__)
+
+    parse_layer4(packet.data)
+
+
+#
+def parse_layer4(packet):  # 应用层
     return
 
 
