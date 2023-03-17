@@ -144,9 +144,15 @@ def parse_layer3(packet):  # 传输层
     parse_layer4(packet.data)
 
 
-#
 def parse_layer4(packet):  # 应用层
-    return
+    if not len(packet):  # 如果应用层负载长度为0，即该包为单纯的tcp包，没有负载，则丢弃
+        return
+
+    packet_type = type(packet)  # HTTPS
+    print(packet_type)
+
+    if isinstance(packet, dpkt.http.Message):  # HTTP
+        pass
 
 
 if __name__ == '__main__':
