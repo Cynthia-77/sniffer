@@ -3,6 +3,9 @@ class SnifferController:
         self.ui = ui
         self.sniffer = None
 
+    def load_devices(self):
+        pass
+
     def set_connection(self):
         self.ui.startButton.clicked.connect(self.start)
         self.ui.pauseButton.clicked.connect(self.pause)

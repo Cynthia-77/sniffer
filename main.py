@@ -12,6 +12,6 @@ if __name__ == '__main__':
     ui.setupUi(MainWindow)
     MainWindow.show()
     sc = SnifferController(ui)  # controller
-    # sc.loadAdapterIfaces()
+    sc.load_devices()
     sc.set_connection()
     sys.exit(app.exec_())
