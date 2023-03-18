@@ -319,11 +319,19 @@
       <pointsize>11</pointsize>
      </font>
     </property>
+    <attribute name="headerVisible">
+     <bool>false</bool>
+    </attribute>
     <column>
      <property name="text">
       <string>1</string>
      </property>
     </column>
+    <item>
+     <property name="text">
+      <string>1</string>
+     </property>
+    </item>
     <item>
      <property name="text">
       <string>2</string>
