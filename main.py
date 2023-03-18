@@ -3,7 +3,7 @@ import sys
 from PyQt5 import QtWidgets
 
 import snifferGUI
-import snifferController
+from snifferController import *
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
@@ -11,7 +11,7 @@ if __name__ == '__main__':
     MainWindow = QtWidgets.QMainWindow()
     ui.setupUi(MainWindow)
     MainWindow.show()
-    # sc = snifferGUIController(ui)  # controller
+    sc = SnifferController(ui)  # controller
     # sc.loadAdapterIfaces()
-    # sc.setConnection()
+    sc.set_connection()
     sys.exit(app.exec_())

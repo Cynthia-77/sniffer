@@ -8,4 +8,19 @@ class SnifferController:
         self.ui.pauseButton.clicked.connect(self.pause)
         self.ui.resetButton.clicked.connect(self.reset)
         self.ui.protocolFilterAfterCapture.activated.connect(self.filter)
-        self.ui.tableWidget.itemClicked.connect(self.show_item_detail)
+        self.ui.packetsTable.itemClicked.connect(self.show_item_detail)
+
+    def start(self):
+        pass
+
+    def pause(self):
+        pass
+
+    def reset(self):
+        pass
+
+    def filter(self):
+        pass
+
+    def show_item_detail(self):
+        pass
