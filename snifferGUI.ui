@@ -345,7 +345,7 @@
      </rect>
     </property>
    </widget>
-   <widget class="QPushButton" name="refreshButton">
+   <widget class="QPushButton" name="resetButton">
     <property name="geometry">
      <rect>
       <x>360</x>
@@ -360,11 +360,11 @@
      </font>
     </property>
     <property name="text">
-     <string>取消过滤</string>
+     <string>重置过滤</string>
     </property>
     <property name="icon">
      <iconset>
-      <normaloff>static/refresh.png</normaloff>static/refresh.png</iconset>
+      <normaloff>static/reset.png</normaloff>static/reset.png</iconset>
     </property>
     <property name="iconSize">
      <size>
