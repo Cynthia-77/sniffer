@@ -99,7 +99,7 @@
      <bool>true</bool>
     </property>
    </widget>
-   <widget class="QComboBox" name="devices_2">
+   <widget class="QComboBox" name="protocolFilterBeforeCapture">
     <property name="geometry">
      <rect>
       <x>750</x>
@@ -168,7 +168,7 @@
      <string>开始捕获前，选择想要监听的网卡：</string>
     </property>
    </widget>
-   <widget class="QLabel" name="protocolLabelBeforeCapture">
+   <widget class="QLabel" name="filterLabelBeforeCapture">
     <property name="geometry">
      <rect>
       <x>750</x>
@@ -186,7 +186,7 @@
      <string>开始捕获前，选择过滤器：</string>
     </property>
    </widget>
-   <widget class="QComboBox" name="devices_3">
+   <widget class="QComboBox" name="protocolFilterAfterCapture">
     <property name="geometry">
      <rect>
       <x>750</x>
@@ -237,7 +237,7 @@
      </property>
     </item>
    </widget>
-   <widget class="QLabel" name="protocolLabelAfterCapture">
+   <widget class="QLabel" name="filterLabelAfterCapture">
     <property name="geometry">
      <rect>
       <x>420</x>
@@ -335,7 +335,7 @@
      </property>
     </item>
    </widget>
-   <widget class="QTextBrowser" name="textBrowser">
+   <widget class="QTextBrowser" name="packetData">
     <property name="geometry">
      <rect>
       <x>990</x>
