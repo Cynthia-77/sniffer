@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1245</width>
+    <width>1500</width>
     <height>890</height>
    </rect>
   </property>
@@ -20,17 +20,11 @@
    <widget class="QPushButton" name="pushButton">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>10</y>
+      <x>20</x>
+      <y>90</y>
       <width>150</width>
-      <height>50</height>
+      <height>51</height>
      </rect>
-    </property>
-    <property name="minimumSize">
-     <size>
-      <width>75</width>
-      <height>50</height>
-     </size>
     </property>
     <property name="font">
      <font>
@@ -59,8 +53,8 @@
    <widget class="QPushButton" name="pauseButton">
     <property name="geometry">
      <rect>
-      <x>180</x>
-      <y>10</y>
+      <x>190</x>
+      <y>90</y>
       <width>150</width>
       <height>50</height>
      </rect>
@@ -84,13 +78,280 @@
      </size>
     </property>
    </widget>
+   <widget class="QComboBox" name="devices">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>40</y>
+      <width>701</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="inputMethodHints">
+     <set>Qt::ImhNone</set>
+    </property>
+    <property name="editable">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="devices_2">
+    <property name="geometry">
+     <rect>
+      <x>750</x>
+      <y>40</y>
+      <width>471</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="inputMethodHints">
+     <set>Qt::ImhNone</set>
+    </property>
+    <property name="editable">
+     <bool>true</bool>
+    </property>
+    <item>
+     <property name="text">
+      <string>eth</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>ip</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>tcp</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>udp</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>http</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>https</string>
+     </property>
+    </item>
+   </widget>
+   <widget class="QLabel" name="deviceLabel">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>10</y>
+      <width>381</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>11</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>开始捕获前，选择想要监听的网卡：</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="protocolLabelBeforeCapture">
+    <property name="geometry">
+     <rect>
+      <x>750</x>
+      <y>10</y>
+      <width>381</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>11</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>开始捕获前，选择过滤器：</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="devices_3">
+    <property name="geometry">
+     <rect>
+      <x>750</x>
+      <y>95</y>
+      <width>471</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="inputMethodHints">
+     <set>Qt::ImhNone</set>
+    </property>
+    <property name="editable">
+     <bool>true</bool>
+    </property>
+    <item>
+     <property name="text">
+      <string>eth</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>ip</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>tcp</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>udp</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>http</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>https</string>
+     </property>
+    </item>
+   </widget>
+   <widget class="QLabel" name="protocolLabelAfterCapture">
+    <property name="geometry">
+     <rect>
+      <x>420</x>
+      <y>100</y>
+      <width>371</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>11</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>停止捕获后，选择过滤器：</string>
+    </property>
+   </widget>
+   <widget class="QTableWidget" name="packetsTable">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>150</y>
+      <width>1451</width>
+      <height>391</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>11</pointsize>
+     </font>
+    </property>
+    <column>
+     <property name="text">
+      <string>No.</string>
+     </property>
+    </column>
+    <column>
+     <property name="text">
+      <string>Time</string>
+     </property>
+    </column>
+    <column>
+     <property name="text">
+      <string>Destination</string>
+     </property>
+    </column>
+    <column>
+     <property name="text">
+      <string>Source</string>
+     </property>
+    </column>
+    <column>
+     <property name="text">
+      <string>Protocol</string>
+     </property>
+    </column>
+    <column>
+     <property name="text">
+      <string>Length</string>
+     </property>
+    </column>
+    <column>
+     <property name="text">
+      <string>Info</string>
+     </property>
+    </column>
+   </widget>
+   <widget class="QTreeWidget" name="parsePacket">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>550</y>
+      <width>961</width>
+      <height>291</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>11</pointsize>
+     </font>
+    </property>
+    <column>
+     <property name="text">
+      <string>1</string>
+     </property>
+    </column>
+    <item>
+     <property name="text">
+      <string>2</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>3</string>
+     </property>
+    </item>
+   </widget>
+   <widget class="QTextBrowser" name="textBrowser">
+    <property name="geometry">
+     <rect>
+      <x>990</x>
+      <y>550</y>
+      <width>481</width>
+      <height>291</height>
+     </rect>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1245</width>
+     <width>1500</width>
      <height>22</height>
     </rect>
    </property>
