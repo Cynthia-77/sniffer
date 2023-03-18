@@ -17,7 +17,7 @@
    <string/>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QPushButton" name="pushButton">
+   <widget class="QPushButton" name="startButton">
     <property name="geometry">
      <rect>
       <x>20</x>
@@ -305,7 +305,7 @@
      </property>
     </column>
    </widget>
-   <widget class="QTreeWidget" name="parsePacket">
+   <widget class="QTreeWidget" name="packetDetail">
     <property name="geometry">
      <rect>
       <x>20</x>
