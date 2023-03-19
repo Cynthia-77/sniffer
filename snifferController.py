@@ -1,10 +1,17 @@
+import parse
+
+
 class SnifferController:
     def __init__(self, ui):
         self.ui = ui
         self.sniffer = None
 
     def load_devices(self):
-        pass
+        devices = parse.get_devices()
+        index = 0
+        for device in devices:
+            index += 1
+            self.ui.devices.addItem(str(index) + ": " + device)
 
     def set_connection(self):
         self.ui.startButton.clicked.connect(self.start)

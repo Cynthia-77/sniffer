@@ -155,6 +155,17 @@ def parse_layer4(packet):  # 应用层
         pass
 
 
+def get_devices():
+    # Return a list(dict) of all the devices detected on the machine
+    devices_dict = WinPcapDevices.list_devices()
+    # print(devices_dict)
+    devices_list = []
+    for keys, value in devices_dict.items():
+        devices_list.append(value)
+    # print(devices_list)
+    return devices_list
+
+
 if __name__ == '__main__':
     # Return a list(dict) of all the devices detected on the machine
     devices_dict = WinPcapDevices.list_devices()
