@@ -41,7 +41,7 @@
     </property>
     <property name="icon">
      <iconset>
-      <normaloff>C:/Users/zhang/.designer/backup/static/start.png</normaloff>C:/Users/zhang/.designer/backup/static/start.png</iconset>
+      <normaloff>static/start.png</normaloff>static/start.png</iconset>
     </property>
     <property name="iconSize">
      <size>
@@ -69,7 +69,7 @@
     </property>
     <property name="icon">
      <iconset>
-      <normaloff>C:/Users/zhang/.designer/backup/static/pause.png</normaloff>C:/Users/zhang/.designer/backup/static/pause.png</iconset>
+      <normaloff>static/pause.png</normaloff>static/pause.png</iconset>
     </property>
     <property name="iconSize">
      <size>
@@ -269,6 +269,15 @@
       <pointsize>11</pointsize>
      </font>
     </property>
+    <property name="editTriggers">
+     <set>QAbstractItemView::NoEditTriggers</set>
+    </property>
+    <property name="selectionBehavior">
+     <enum>QAbstractItemView::SelectRows</enum>
+    </property>
+    <attribute name="verticalHeaderVisible">
+     <bool>false</bool>
+    </attribute>
     <column>
      <property name="text">
       <string>No.</string>
@@ -352,6 +361,11 @@
       <height>291</height>
      </rect>
     </property>
+    <property name="markdown">
+     <string>123
+
+</string>
+    </property>
    </widget>
    <widget class="QPushButton" name="resetButton">
     <property name="geometry">
@@ -372,7 +386,7 @@
     </property>
     <property name="icon">
      <iconset>
-      <normaloff>C:/Users/zhang/.designer/backup/static/reset.png</normaloff>C:/Users/zhang/.designer/backup/static/reset.png</iconset>
+      <normaloff>static/reset.png</normaloff>static/reset.png</iconset>
     </property>
     <property name="iconSize">
      <size>

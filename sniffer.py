@@ -1,4 +1,6 @@
 import dpkt
+from PyQt5 import QtCore
+from PyQt5.QtCore import *
 
 import packetParser
 import time
@@ -18,27 +20,20 @@ def get_devices():
     return devices
 
 
-class Sniffer:
+class Sniffer(QtCore.QThread):
+    HandleSignal = QtCore.pyqtSignal(scapy.packet.Packet)
+
     def __init__(self):
-        self.capture = None
-        self.frame_index = 0
+        super().__init__()
+        self.mutex_1 = QMutex()
+        self.cond = QWaitCondition()
+        self.device = None
 
-    def packet_callback(self, pkt_data):
-        self.frame_index += 1
-        wrpcap('packet.pcap', [pkt_data])
-
-        try:
-            with open('packet.pcap', 'rb') as f:
-                capture = dpkt.pcap.Reader(f)
-                for timestamp, packet in capture:  # 键值对，提取packet进行解码
-                    pkt_parser = packetParser.PacketParser(self.frame_index)
-                    pkt_parser.parse(timestamp, packet)
-        except Exception as e:
-            print(e)
-
-    def start(self, device):
+    def run(self):
         while True:
-            sniff(iface=device, prn=self.packet_callback, count=1)
+            self.mutex_1.lock()
+            sniff(iface=self.device, prn=lambda x: self.HandleSignal.emit(x), count=1, timeout=2)
+            self.mutex_1.unlock()
 
     def stop(self):
         pass

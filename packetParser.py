@@ -9,19 +9,20 @@ from scapy.all import *
 class PacketParser:
     def __init__(self, frame_index):
         self.frame_index = frame_index
-        self.info = {'index': None, 'time': None, 'len': None}
-        # 数据链路层
+        self.info = {'index': None, 'time': None, 'curTime': None, 'dst': None, 'src': None, 'protocol': None,
+                     'len': None, 'info': ''}
+        # 数据链路层 Ethernet
         self.layer1 = {'name': None, 'smac': None, 'dmac': None, 'type': None}
-        # 网络层
+        # 网络层 IP (ARP
         self.layer2 = {'name': None, 'src': None, 'dst': None, 'version': None, 'headerLen': None, 'tos': None,
                        'totLen': None, 'identification': None, 'flags': None, 'rf': None, 'df': None, 'mf': None,
                        'offset': None, 'ttl': None, 'protocol': None, 'checksum': None}
-        # 传输层
+        # 传输层 TCP UDP
         self.layer3 = {'name': None, 'sport': None, 'dport': None, 'seq': None, 'ack': None, 'headerLen': None,
                        'flags': None, 'reserved': None, 'ecn': None, 'cwr': None, 'ece': None, 'urg': None, 'ack': None,
                        'psh': None, 'rst': None, 'syn': None, 'fin': None, 'window': None, 'checksum': None,
                        'urp': None, 'opts': None, 'payload': None}
-        # 应用层
+        # 应用层 HTTP
         self.layer4 = {'name': None, 'method': None, 'url': None, 'version': None, 'headers': None, 'host': None,
                        'userAgent': None, 'body': None}
 
@@ -41,18 +42,21 @@ class PacketParser:
         except Exception as e:
             print(e)
 
-    def parse(self, timestamp, pkt_data):
+    def parse(self, timestamp, pkt_data, start_time):
         current_time = time.strftime('%Y-%m-%d %H:%M:%S', (time.localtime()))
+        pkt_time = timestamp - start_time
         pkt_len = len(pkt_data)  # bytes
 
-        self.info['index'] = self.frame_index
-        self.info['time'] = current_time
-        self.info['len'] = pkt_len
+        self.info['index'] = str(self.frame_index)
+        self.info['time'] = str(pkt_time)
+        self.info['curTime'] = current_time
+        self.info['len'] = str(pkt_len)
 
         output1 = {'Frame': self.frame_index}
         output2 = {'time': current_time}
         output3 = {'len': pkt_len}
         print()
+        print(timestamp)
         print(output1)
         print(output2)
         print(output3)
@@ -65,6 +69,9 @@ class PacketParser:
         dmac = "-".join(["%02x" % (b) for b in eth.dst])
         packet_type = type(eth)  # Ethernet
         data_protocol = eth.type
+
+        if data_protocol == 0x0800:  # IP
+            data_protocol = 'IPv4 (0X0800)'
 
         self.layer1['name'] = 'Ethernet'
         self.layer1['smac'] = smac
@@ -88,7 +95,9 @@ class PacketParser:
         if isinstance(packet, dpkt.ip.IP):  # IP数据报
             # 取出分片信息
             src = packet.src
+            src = '%d.%d.%d.%d' % tuple(src)
             dst = packet.dst
+            dst = '%d.%d.%d.%d' % tuple(dst)
             version = packet.v
             head_len = packet.hl
             type_of_service = packet.tos
@@ -119,9 +128,13 @@ class PacketParser:
             self.layer1['protocol'] = protocol
             self.layer1['checksum'] = pkt_checksum
 
+            self.info['src'] = src
+            self.info['dst'] = dst
+            self.info['protocol'] = 'IPv4'
+
             # 输出数据包信息
             output1 = {'type': packet_type, 'version': version}
-            output2 = {'src': '%d.%d.%d.%d' % tuple(src), 'dst': '%d.%d.%d.%d' % tuple(dst)}
+            output2 = {'src': src, 'dst': dst}
             output8 = {'head len': head_len}
             output9 = {'Type of service': type_of_service}
             output3 = {'id': identification, 'len': packet_len}
@@ -174,6 +187,9 @@ class PacketParser:
             self.layer1['opts'] = opts
             self.layer1['payload'] = payload
 
+            self.info['protocol'] = 'TCP'
+            self.info['info'] = str(sport) + ' --> ' + str(dport)
+
             # 输出数据包信息
             output1 = {'type': packet_type}
             output2 = {'sport': sport, 'dport': dport}
@@ -203,6 +219,8 @@ class PacketParser:
             self.layer1['checksum'] = pkt_checksum
             self.layer1['payload'] = payload
 
+            self.info['protocol'] = 'UDP'
+
             # 输出数据包信息
             output1 = {'type': packet_type}
             output2 = {'sport': sport, 'dport': dport}
@@ -226,6 +244,7 @@ class PacketParser:
 
         if isinstance(packet, dpkt.http.Message):  # HTTP
             self.layer4['name'] = 'HTTP'
+            self.info['protocol'] = 'HTTP'
             if isinstance(packet, dpkt.http.Request):  # Request
                 method = packet.method
                 url = packet.uri
