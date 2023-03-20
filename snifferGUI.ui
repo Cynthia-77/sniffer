@@ -50,7 +50,7 @@
      </size>
     </property>
    </widget>
-   <widget class="QPushButton" name="pauseButton">
+   <widget class="QPushButton" name="stopButton">
     <property name="geometry">
      <rect>
       <x>190</x>

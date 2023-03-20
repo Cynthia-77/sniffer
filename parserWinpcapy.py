@@ -1,6 +1,6 @@
-from winpcapy import WinPcapDevices
+from winpcapy import WinPcapDevices, WinPcap
 from winpcapy import WinPcapUtils
-
+from scapy.all import *
 import dpkt
 import time
 import datetime, sys
@@ -18,6 +18,13 @@ def packet_callback(win_pcap, param, header, pkt_data):
     print(output1)
     print(output2)
 
+    parse(pkt_data)
+
+
+def parse(pkt_data):
+    print(pkt_data)
+    print([pkt_data])
+    print(type(pkt_data))
     eth = dpkt.ethernet.Ethernet(pkt_data)
 
     parse_layer1(eth)
@@ -155,27 +162,30 @@ def parse_layer4(packet):  # 应用层
         pass
 
 
-def get_devices():
-    # Return a list(dict) of all the devices detected on the machine
-    devices_dict = WinPcapDevices.list_devices()
-    # print(devices_dict)
-    devices_list = []
-    for keys, value in devices_dict.items():
-        devices_list.append(value)
-    # print(devices_list)
-    return devices_list
-
-
 if __name__ == '__main__':
     # Return a list(dict) of all the devices detected on the machine
     devices_dict = WinPcapDevices.list_devices()
     # print(devices_dict)
-    devices_list = []
-    for keys, value in devices_dict.items():
-        # 键和值都要
-        temp = (keys, value)
-        devices_list.append(temp)
-    # print(devices_list)
+    devices_name_list = []
+    for name, description in devices_dict.items():
+        tmp = (name, description)
+        devices_name_list.append(tmp)
+    print(devices_name_list)
+
+    # devices = []
+    # print(conf.route)
+    # for i in repr(conf.route).split('\n')[1:]:
+    #     tmp = re.search(r'[a-zA-Z](.*)[a-zA-Z0-9]', i).group()[0:44].rstrip()
+    #     if len(tmp) > 0:
+    #         devices.append(tmp)
+    # devices = list(set(devices))
+    # devices.sort()
+    # print(devices)
+    #
+    # sniff(iface=devices[0], prn=packet_callback)
+
+    with WinPcap(devices_name_list[2][0]) as capture:
+        capture.run(packet_callback)  # 只抓一个包
 
     # Iterate over devices (in memory), with full details access
     k = -1
@@ -190,5 +200,17 @@ if __name__ == '__main__':
 
     deviceIndex = int(input("请输入你想要监听的网卡序号: "))
 
-    device_description = devices_list[deviceIndex][1]
-    WinPcapUtils.capture_on(device_description, packet_callback)
+    device_description = devices_name_list[deviceIndex]
+    print(device_description)
+    # WinPcapUtils.capture_on(device_description, packet_callback)
+    # device_name = devices_list[deviceIndex][0]
+    # print(device_name)
+    WinPcapUtils.capture_on_device_name(device_description, packet_callback)
+    device_name, desc = WinPcapDevices.get_matching_device(device_description)
+    print(device_name)
+    if device_name is not None:
+        with WinPcap(device_name) as capture:
+            capture.run(callback=packet_callback)
+            time.sleep(3)
+            # device_name, desc = WinPcapDevices.get_matching_device(device_description)
+            capture.stop()
