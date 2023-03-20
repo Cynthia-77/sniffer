@@ -24,13 +24,15 @@ class Sniffer:
         self.frame_index = 0
 
     def packet_callback(self, pkt_data):
+        self.frame_index += 1
         wrpcap('packet.pcap', [pkt_data])
 
         try:
             with open('packet.pcap', 'rb') as f:
                 capture = dpkt.pcap.Reader(f)
                 for timestamp, packet in capture:  # 键值对，提取packet进行解码
-                    packetParser.parse(self.frame_index, timestamp, packet)
+                    pkt_parser = packetParser.PacketParser(self.frame_index)
+                    pkt_parser.parse(timestamp, packet)
         except Exception as e:
             print(e)
 
