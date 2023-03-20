@@ -61,7 +61,7 @@ class SnifferController:
             self.sniffer.start()
 
     def stop(self):
-        pass
+        self.sniffer.stop()
 
     def reset(self):
         pass
