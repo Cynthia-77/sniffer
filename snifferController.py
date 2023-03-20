@@ -24,7 +24,6 @@ class SnifferController:
             self.sniffer = sniffer.Sniffer()
         device = self.get_device()
         print("sniff on " + device)
-        return
         self.sniffer.start(device)
 
     def stop(self):

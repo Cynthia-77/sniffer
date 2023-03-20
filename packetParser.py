@@ -192,4 +192,6 @@ if __name__ == '__main__':
 
     device = devices[deviceIndex]
 
+    print(device)
+
     catch_pack(device)

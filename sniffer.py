@@ -1,6 +1,6 @@
 import dpkt
 
-import parser
+import packetParser
 import time
 
 from scapy.all import *
@@ -30,7 +30,7 @@ class Sniffer:
             with open('packet.pcap', 'rb') as f:
                 capture = dpkt.pcap.Reader(f)
                 for timestamp, packet in capture:  # 键值对，提取packet进行解码
-                    parser.parse(self.frame_index, timestamp, packet)
+                    packetParser.parse(self.frame_index, timestamp, packet)
         except Exception as e:
             print(e)
 
