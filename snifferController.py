@@ -14,6 +14,7 @@ class SnifferController:
         self.sniffer = None
         self.start_time = None
         self.frame_index = 0
+        self.packets = []  # 用来显示data
         self.pkt_parsers = []  # 用来显示detail
 
     def load_devices(self):
@@ -37,6 +38,7 @@ class SnifferController:
             with open('packet.pcap', 'rb') as f:
                 capture = dpkt.pcap.Reader(f)
                 for timestamp, pkt in capture:  # 键值对，提取packet进行解码
+                    self.packets.append(pkt)
                     pkt_parser = packetParser.PacketParser(self.frame_index)
                     pkt_parser.parse(timestamp, pkt, self.start_time)
                     self.pkt_parsers.append(pkt_parser)
