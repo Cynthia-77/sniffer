@@ -66,6 +66,7 @@ class SnifferController:
             self.packets = []
             self.pkt_parsers = []
             self.clear_packets_table()
+            self.clear_packet_detail()
 
             self.sniffer.device = self.device
             self.start_time = time.time()
@@ -264,6 +265,9 @@ class SnifferController:
             pass
         else:
             pass
+
+    def clear_packet_detail(self):
+        self.ui.packetDetail.clear()
 
     def set_packet_data(self, packet):
         pass
