@@ -2,7 +2,7 @@ import time
 
 import dpkt
 from PyQt5 import QtWidgets, QtCore
-from scapy.utils import wrpcap
+from scapy.utils import wrpcap, hexdump
 
 import packetParser
 import sniffer
@@ -18,6 +18,7 @@ class SnifferController:
         self.frame_index = 0
         self.packets = []  # 用来显示data
         self.pkt_parsers = []  # 用来显示detail
+        self.captures = []
 
     def load_devices(self):
         devices = sniffer.get_devices()
@@ -32,6 +33,7 @@ class SnifferController:
         self.ui.packetsTable.itemClicked.connect(self.show_item_detail)
 
     def packet_callback(self, pkt_data):
+        self.captures.append(pkt_data)
         self.frame_index += 1
         wrpcap('packet.pcap', [pkt_data])
 
@@ -39,6 +41,8 @@ class SnifferController:
             with open('packet.pcap', 'rb') as f:
                 capture = dpkt.pcap.Reader(f)
                 for timestamp, pkt in capture:  # 键值对，提取packet进行解码
+                    print(pkt_data)
+                    print(pkt)
                     self.packets.append(pkt)
                     pkt_parser = packetParser.PacketParser(self.frame_index)
                     pkt_parser.parse(timestamp, pkt, self.start_time)
@@ -67,6 +71,7 @@ class SnifferController:
             self.pkt_parsers = []
             self.clear_packets_table()
             self.clear_packet_detail()
+            self.clear_packet_data()
 
             self.sniffer.device = self.device
             self.start_time = time.time()
@@ -89,9 +94,10 @@ class SnifferController:
         row = self.ui.packetsTable.currentRow()  # 获取当前行
         pkt_parser = self.pkt_parsers[row]
         packet = self.packets[row]
+        capture = self.captures[row]
 
         self.set_packet_detail(pkt_parser)
-        self.set_packet_data(packet)
+        self.set_packet_data(capture)
 
     def get_device(self):
         device = self.ui.devices.currentText()
@@ -269,5 +275,13 @@ class SnifferController:
     def clear_packet_detail(self):
         self.ui.packetDetail.clear()
 
-    def set_packet_data(self, packet):
-        pass
+    def set_packet_data(self, capture):
+        try:
+            self.ui.packetData.clear()
+            content = hexdump(capture, dump=True)
+            self.ui.packetData.append(content)
+        except Exception as e:
+            print(e)
+
+    def clear_packet_data(self):
+        self.ui.packetData.clear()
