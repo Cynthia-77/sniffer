@@ -126,9 +126,6 @@ class Ui_MainWindow(object):
         font.setPointSize(11)
         self.packetDetail.setFont(font)
         self.packetDetail.setObjectName("packetDetail")
-        item_0 = QtWidgets.QTreeWidgetItem(self.packetDetail)
-        item_0 = QtWidgets.QTreeWidgetItem(self.packetDetail)
-        item_0 = QtWidgets.QTreeWidgetItem(self.packetDetail)
         self.packetDetail.header().setVisible(False)
         self.packetData = QtWidgets.QTextBrowser(self.centralwidget)
         self.packetData.setGeometry(QtCore.QRect(990, 550, 481, 291))
@@ -192,13 +189,6 @@ class Ui_MainWindow(object):
         item.setText(_translate("MainWindow", "Length"))
         item = self.packetsTable.horizontalHeaderItem(6)
         item.setText(_translate("MainWindow", "Info"))
-        self.packetDetail.headerItem().setText(0, _translate("MainWindow", "1"))
-        __sortingEnabled = self.packetDetail.isSortingEnabled()
-        self.packetDetail.setSortingEnabled(False)
-        self.packetDetail.topLevelItem(0).setText(0, _translate("MainWindow", "1"))
-        self.packetDetail.topLevelItem(1).setText(0, _translate("MainWindow", "2"))
-        self.packetDetail.topLevelItem(2).setText(0, _translate("MainWindow", "3"))
-        self.packetDetail.setSortingEnabled(__sortingEnabled)
         self.packetData.setMarkdown(_translate("MainWindow", "123\n"
 "\n"
 ""))

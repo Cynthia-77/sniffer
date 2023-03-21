@@ -9,19 +9,20 @@ from scapy.all import *
 class PacketParser:
     def __init__(self, frame_index):
         self.frame_index = frame_index
-        self.info = {'index': None, 'time': None, 'curTime': None, 'dst': None, 'src': None, 'protocol': None,
-                     'len': None, 'info': ''}
+        self.info = {'index': None, 'timestamp': None, 'time': None, 'curTime': None, 'dst': None, 'src': None,
+                     'protocol': None, 'len': None, 'info': '', 'pktData': None}
         # 数据链路层 Ethernet
         self.layer1 = {'name': None, 'smac': None, 'dmac': None, 'type': None}
-        # 网络层 IP (ARP
-        self.layer2 = {'name': None, 'src': None, 'dst': None, 'version': None, 'headerLen': None, 'tos': None,
-                       'totLen': None, 'identification': None, 'flags': None, 'rf': None, 'df': None, 'mf': None,
-                       'offset': None, 'ttl': None, 'protocol': None, 'checksum': None}
+        # 网络层 IPv4 (IPv6 ARP
+        self.layer2 = {'name': None, 'src': None, 'dst': None, 'version': None, 'headerLen': None,
+                       'headerLenBytes': None, 'tos': None, 'totLen': None, 'identification': None, 'flags': None,
+                       'rf': None, 'df': None, 'mf': None, 'offset': None, 'ttl': None, 'protocol': None,
+                       'checksum': None}
         # 传输层 TCP UDP
         self.layer3 = {'name': None, 'sport': None, 'dport': None, 'seq': None, 'ack': None, 'headerLen': None,
-                       'flags': None, 'reserved': None, 'ecn': None, 'cwr': None, 'ece': None, 'urg': None, 'ack': None,
-                       'psh': None, 'rst': None, 'syn': None, 'fin': None, 'window': None, 'checksum': None,
-                       'urp': None, 'opts': None, 'payload': None}
+                       'headerLenBytes': None, 'flags': None, 'rf': None, 'ecn': None, 'cwr': None, 'ece': None,
+                       'urg': None, 'ackFlag': None, 'psh': None, 'rst': None, 'syn': None, 'fin': None, 'window': None,
+                       'checksum': None, 'urp': None, 'opts': None, 'payload': None}
         # 应用层 HTTP
         self.layer4 = {'name': None, 'method': None, 'url': None, 'version': None, 'headers': None, 'host': None,
                        'userAgent': None, 'body': None}
@@ -48,9 +49,11 @@ class PacketParser:
         pkt_len = len(pkt_data)  # bytes
 
         self.info['index'] = str(self.frame_index)
+        self.info['timestamp'] = str(timestamp)
         self.info['time'] = str(pkt_time)
         self.info['curTime'] = current_time
         self.info['len'] = str(pkt_len)
+        self.info['pktData'] = pkt_data
 
         output1 = {'Frame': self.frame_index}
         output2 = {'time': current_time}
@@ -65,13 +68,13 @@ class PacketParser:
         self.parse_layer1(eth)
 
     def parse_layer1(self, eth):  # 数据链路层
-        smac = "-".join(["%02x" % (b) for b in eth.src])
-        dmac = "-".join(["%02x" % (b) for b in eth.dst])
+        smac = ":".join(["%02x" % (b) for b in eth.src])
+        dmac = ":".join(["%02x" % (b) for b in eth.dst])
         packet_type = type(eth)  # Ethernet
         data_protocol = eth.type
 
         if data_protocol == 0x0800:  # IP
-            data_protocol = 'IPv4 (0X0800)'
+            data_protocol = 'IPv4 (0x0800)'
 
         self.layer1['name'] = 'Ethernet'
         self.layer1['smac'] = smac
@@ -89,10 +92,10 @@ class PacketParser:
         self.parse_layer2(eth.data)
 
     def parse_layer2(self, packet):  # 网络层
-        packet_type = type(packet)  # IP
+        packet_type = type(packet)  # IPv4
 
         # 判断数据报类型
-        if isinstance(packet, dpkt.ip.IP):  # IP数据报
+        if isinstance(packet, dpkt.ip.IP):  # IPv4
             # 取出分片信息
             src = packet.src
             src = '%d.%d.%d.%d' % tuple(src)
@@ -100,33 +103,41 @@ class PacketParser:
             dst = '%d.%d.%d.%d' % tuple(dst)
             version = packet.v
             head_len = packet.hl
-            type_of_service = packet.tos
+            head_len_bytes = head_len * 4
+            differentiated_services = '0x{:02x}'.format(packet.tos)
             packet_len = packet.len  # 首部+数据
             identification = packet.id
             rf = packet.rf  # Reserved bit
             df = packet.df  # don't fragment
             mf = packet.mf  # more fragments (not last frag)
+            flags = str(rf) + str(df) + str(mf)
+            flags = hex(int(flags, 2))
             offset = packet.offset
             ttl = packet.ttl
             protocol = packet.p  # tcp udp
-            pkt_checksum = packet.sum
+            if protocol == 6:  # TCP
+                protocol = 'TCP (' + str(protocol) + ')'
+            elif protocol == 17:  # UDP
+                protocol = 'UDP (' + str(protocol) + ')'
+            pkt_checksum = '0x{:04x}'.format(packet.sum)
 
-            self.layer1['name'] = 'IPv4'
-            self.layer1['src'] = src
-            self.layer1['dst'] = dst
-            self.layer1['version'] = version
-            self.layer1['headerLen'] = head_len
-            self.layer1['tos'] = type_of_service
-            self.layer1['totLen'] = packet_len
-            self.layer1['identification'] = identification
-            # self.layer1['flags'] =
-            self.layer1['rf'] = rf
-            self.layer1['df'] = df
-            self.layer1['mf'] = mf
-            self.layer1['offset'] = offset
-            self.layer1['ttl'] = ttl
-            self.layer1['protocol'] = protocol
-            self.layer1['checksum'] = pkt_checksum
+            self.layer2['name'] = 'IPv4'
+            self.layer2['src'] = src
+            self.layer2['dst'] = dst
+            self.layer2['version'] = version
+            self.layer2['headerLen'] = head_len
+            self.layer2['headerLenBytes'] = head_len_bytes
+            self.layer2['tos'] = differentiated_services
+            self.layer2['totLen'] = packet_len
+            self.layer2['identification'] = identification
+            self.layer2['flags'] = flags
+            self.layer2['rf'] = rf
+            self.layer2['df'] = df
+            self.layer2['mf'] = mf
+            self.layer2['offset'] = offset
+            self.layer2['ttl'] = ttl
+            self.layer2['protocol'] = protocol
+            self.layer2['checksum'] = pkt_checksum
 
             self.info['src'] = src
             self.info['dst'] = dst
@@ -136,7 +147,7 @@ class PacketParser:
             output1 = {'type': packet_type, 'version': version}
             output2 = {'src': src, 'dst': dst}
             output8 = {'head len': head_len}
-            output9 = {'Type of service': type_of_service}
+            output9 = {'Differentiated Services': differentiated_services}
             output3 = {'id': identification, 'len': packet_len}
             output4 = {'df': df, 'mf': mf, 'offset': offset}
             output5 = {'ttl': ttl}
@@ -152,11 +163,14 @@ class PacketParser:
             print(output6)
             print(output7)
         else:
-            print("Non IP packet type not supported ", packet.__class__.__name__)
+            print("Non IPv4 packet type not supported ", packet.__class__.__name__)
 
         self.parse_layer3(packet.data)
 
     def parse_layer3(self, packet):  # 传输层
+        if len(packet) == 0:  # 如果传输负载长度为0，即该包为单纯的arp包，没有负载，则丢弃
+            return
+
         packet_type = type(packet)  # TCP
 
         # 判断数据报类型
@@ -166,26 +180,49 @@ class PacketParser:
             seq = packet.seq
             ack = packet.ack
             header_len = packet.off
-            flags = packet.flags
+            header_len_bytes = header_len * 4
+            pkt_flags = packet.flags  # int
+            flags = '0x{:03x}'.format(pkt_flags)
+            rf = pkt_flags >> 9
+            ecn = (pkt_flags >> 8) & 1
+            cwr = (pkt_flags >> 7) & 1
+            ece = (pkt_flags >> 6) & 1
+            urg = (pkt_flags >> 5) & 1
+            ack_flag = (pkt_flags >> 4) & 1
+            psh = (pkt_flags >> 3) & 1
+            rst = (pkt_flags >> 2) & 1
+            syn = (pkt_flags >> 1) & 1
+            fin = pkt_flags & 1
             window_size = packet.win
-            pkt_checksum = packet.sum
+            pkt_checksum = '0x{:04x}'.format(packet.sum)
             urp = packet.urp
             opts = packet.opts
             opts = dpkt.tcp.parse_opts(opts)
             payload = len(packet.data)
 
-            self.layer1['name'] = 'TCP'
-            self.layer1['sport'] = sport
-            self.layer1['dport'] = dport
-            self.layer1['seq'] = seq
-            self.layer1['ack'] = ack
-            self.layer1['headerLen'] = header_len
-            self.layer1['flags'] = flags
-            self.layer1['window'] = window_size
-            self.layer1['checksum'] = pkt_checksum
-            self.layer1['urp'] = urp
-            self.layer1['opts'] = opts
-            self.layer1['payload'] = payload
+            self.layer3['name'] = 'TCP'
+            self.layer3['sport'] = sport
+            self.layer3['dport'] = dport
+            self.layer3['seq'] = seq
+            self.layer3['ack'] = ack
+            self.layer3['headerLen'] = header_len
+            self.layer3['headerLenBytes'] = header_len_bytes
+            self.layer3['flags'] = flags
+            self.layer3['rf'] = rf
+            self.layer3['ecn'] = ecn
+            self.layer3['cwr'] = cwr
+            self.layer3['ece'] = ece
+            self.layer3['urg'] = urg
+            self.layer3['ackFlag'] = ack_flag
+            self.layer3['psh'] = psh
+            self.layer3['rst'] = rst
+            self.layer3['syn'] = syn
+            self.layer3['fin'] = fin
+            self.layer3['window'] = window_size
+            self.layer3['checksum'] = pkt_checksum
+            self.layer3['urp'] = urp
+            self.layer3['opts'] = opts
+            self.layer3['payload'] = payload
 
             self.info['protocol'] = 'TCP'
             self.info['info'] = str(sport) + ' --> ' + str(dport)
@@ -209,15 +246,15 @@ class PacketParser:
             sport = packet.sport
             dport = packet.dport
             tot_len = packet.ulen
-            pkt_checksum = packet.sum
+            pkt_checksum = '0x{:04x}'.format(packet.sum)
             payload = len(packet.data)
 
-            self.layer1['name'] = 'UDP'
-            self.layer1['sport'] = sport
-            self.layer1['dport'] = dport
-            self.layer1['len'] = tot_len
-            self.layer1['checksum'] = pkt_checksum
-            self.layer1['payload'] = payload
+            self.layer3['name'] = 'UDP'
+            self.layer3['sport'] = sport
+            self.layer3['dport'] = dport
+            self.layer3['len'] = tot_len
+            self.layer3['checksum'] = pkt_checksum
+            self.layer3['payload'] = payload
 
             self.info['protocol'] = 'UDP'
 
@@ -236,7 +273,7 @@ class PacketParser:
         self.parse_layer4(packet.data)
 
     def parse_layer4(self, packet):  # 应用层
-        if not len(packet):  # 如果应用层负载长度为0，即该包为单纯的tcp包，没有负载，则丢弃
+        if not len(packet):  # 如果应用层负载长度为0，即该包为单纯的tcp/udp包，没有负载，则丢弃
             return
 
         packet_type = type(packet)  # HTTP
@@ -254,13 +291,13 @@ class PacketParser:
                 user_agent = packet.headers['user-agent']
                 body = packet.body
 
-                self.layer1['method'] = method
-                self.layer1['url'] = url
-                self.layer1['version'] = version
-                self.layer1['headers'] = headers
-                self.layer1['host'] = host
-                self.layer1['userAgent'] = user_agent
-                self.layer1['body'] = body
+                self.layer4['method'] = method
+                self.layer4['url'] = url
+                self.layer4['version'] = version
+                self.layer4['headers'] = headers
+                self.layer4['host'] = host
+                self.layer4['userAgent'] = user_agent
+                self.layer4['body'] = body
 
             elif isinstance(packet, dpkt.http.Response):  # Response
                 pass
