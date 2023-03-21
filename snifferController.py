@@ -12,6 +12,7 @@ class SnifferController:
     def __init__(self, ui):
         self.ui = ui
         self.sniffer = None
+        self.stop_flag = True  # 是否处于停止抓包状态
         self.start_time = None
         self.frame_index = 0
         self.packets = []  # 用来显示data
@@ -58,10 +59,24 @@ class SnifferController:
                 print(e)
             self.start_time = time.time()
             print("sniff on " + device)
+            self.stop_flag = False
             self.sniffer.start()
+        elif self.stop_flag:  # 停止后重新开始抓包
+            self.frame_index = 0
+            self.packets = []
+            self.pkt_parsers = []
+            self.clear_packets_table()
+
+            self.sniffer.device = device
+            self.start_time = time.time()
+            print("sniff on " + device)
+            self.stop_flag = False
+            self.sniffer.resume()
 
     def stop(self):
-        self.sniffer.stop()
+        if self.sniffer is not None:
+            self.stop_flag = True
+            self.sniffer.stop()
 
     def reset(self):
         pass
@@ -86,3 +101,7 @@ class SnifferController:
         self.ui.packetsTable.setItem(row, 4, QtWidgets.QTableWidgetItem(pkt_parser.info['protocol']))
         self.ui.packetsTable.setItem(row, 5, QtWidgets.QTableWidgetItem(pkt_parser.info['len']))
         self.ui.packetsTable.setItem(row, 6, QtWidgets.QTableWidgetItem(pkt_parser.info['info']))
+
+    def clear_packets_table(self):
+        # self.ui.packetsTable.clear()
+        self.ui.packetsTable.setRowCount(0)

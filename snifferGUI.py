@@ -98,7 +98,7 @@ class Ui_MainWindow(object):
         self.packetsTable = QtWidgets.QTableWidget(self.centralwidget)
         self.packetsTable.setGeometry(QtCore.QRect(20, 150, 1451, 391))
         font = QtGui.QFont()
-        font.setPointSize(11)
+        font.setPointSize(10)
         self.packetsTable.setFont(font)
         self.packetsTable.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self.packetsTable.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)

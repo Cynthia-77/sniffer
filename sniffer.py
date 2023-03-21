@@ -40,3 +40,7 @@ class Sniffer(QtCore.QThread):
 
     def stop(self):
         self.cond_flag = True
+
+    def resume(self):
+        self.cond_flag = False
+        self.cond.wakeAll()
