@@ -121,15 +121,15 @@ class Ui_MainWindow(object):
         self.packetsTable.setHorizontalHeaderItem(6, item)
         self.packetsTable.verticalHeader().setVisible(False)
         self.packetDetail = QtWidgets.QTreeWidget(self.centralwidget)
-        self.packetDetail.setGeometry(QtCore.QRect(20, 550, 961, 291))
+        self.packetDetail.setGeometry(QtCore.QRect(20, 550, 851, 291))
         font = QtGui.QFont()
-        font.setPointSize(11)
+        font.setPointSize(10)
         self.packetDetail.setFont(font)
         self.packetDetail.setObjectName("packetDetail")
         self.packetDetail.header().setVisible(False)
-        self.packetData = QtWidgets.QTextBrowser(self.centralwidget)
-        self.packetData.setGeometry(QtCore.QRect(990, 550, 481, 291))
-        self.packetData.setObjectName("packetData")
+        self.packetDataHex = QtWidgets.QTextBrowser(self.centralwidget)
+        self.packetDataHex.setGeometry(QtCore.QRect(880, 550, 361, 291))
+        self.packetDataHex.setObjectName("packetDataHex")
         self.resetButton = QtWidgets.QPushButton(self.centralwidget)
         self.resetButton.setGeometry(QtCore.QRect(360, 90, 150, 50))
         font = QtGui.QFont()
@@ -140,6 +140,9 @@ class Ui_MainWindow(object):
         self.resetButton.setIcon(icon2)
         self.resetButton.setIconSize(QtCore.QSize(20, 20))
         self.resetButton.setObjectName("resetButton")
+        self.packetData = QtWidgets.QTextBrowser(self.centralwidget)
+        self.packetData.setGeometry(QtCore.QRect(1240, 550, 231, 291))
+        self.packetData.setObjectName("packetData")
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 1500, 22))
@@ -189,7 +192,10 @@ class Ui_MainWindow(object):
         item.setText(_translate("MainWindow", "Length"))
         item = self.packetsTable.horizontalHeaderItem(6)
         item.setText(_translate("MainWindow", "Info"))
-        self.packetData.setMarkdown(_translate("MainWindow", "123\n"
+        self.packetDataHex.setMarkdown(_translate("MainWindow", "123\n"
 "\n"
 ""))
         self.resetButton.setText(_translate("MainWindow", "重置过滤"))
+        self.packetData.setMarkdown(_translate("MainWindow", "123\n"
+"\n"
+""))

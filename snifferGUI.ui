@@ -319,25 +319,25 @@
      <rect>
       <x>20</x>
       <y>550</y>
-      <width>961</width>
+      <width>851</width>
       <height>291</height>
      </rect>
     </property>
     <property name="font">
      <font>
-      <pointsize>11</pointsize>
+      <pointsize>10</pointsize>
      </font>
     </property>
     <attribute name="headerVisible">
      <bool>false</bool>
     </attribute>
    </widget>
-   <widget class="QTextBrowser" name="packetData">
+   <widget class="QTextBrowser" name="packetDataHex">
     <property name="geometry">
      <rect>
-      <x>990</x>
+      <x>880</x>
       <y>550</y>
-      <width>481</width>
+      <width>361</width>
       <height>291</height>
      </rect>
     </property>
@@ -373,6 +373,21 @@
       <width>20</width>
       <height>20</height>
      </size>
+    </property>
+   </widget>
+   <widget class="QTextBrowser" name="packetData">
+    <property name="geometry">
+     <rect>
+      <x>1240</x>
+      <y>550</y>
+      <width>231</width>
+      <height>291</height>
+     </rect>
+    </property>
+    <property name="markdown">
+     <string>123
+
+</string>
     </property>
    </widget>
   </widget>
