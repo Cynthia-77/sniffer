@@ -18,14 +18,14 @@ class PacketParser:
                        'headerLenBytes': None, 'tos': None, 'totLen': None, 'identification': None, 'flags': None,
                        'rf': None, 'df': None, 'mf': None, 'offset': None, 'ttl': None, 'protocol': None,
                        'checksum': None}
-        # 传输层 TCP UDP
+        # 传输层 TCP UDP (ICMP
         self.layer3 = {'name': None, 'sport': None, 'dport': None, 'seq': None, 'ack': None, 'headerLen': None,
                        'headerLenBytes': None, 'flags': None, 'rf': None, 'ecn': None, 'cwr': None, 'ece': None,
                        'urg': None, 'ackFlag': None, 'psh': None, 'rst': None, 'syn': None, 'fin': None, 'window': None,
                        'checksum': None, 'urp': None, 'opts': None, 'payload': None}
-        # 应用层 HTTP
+        # 应用层 HTTP (HTTPS TLS DNS SSL FTP SSDP QUIC
         self.layer4 = {'name': None, 'method': None, 'url': None, 'version': None, 'headers': None, 'host': None,
-                       'userAgent': None, 'body': None}
+                       'userAgent': None, 'body': None, 'statusCode': None, 'responsePhrase': None}
 
     # 抓包监听
     def packet_callback(self, pkt_data):
@@ -162,8 +162,12 @@ class PacketParser:
             print(output5)
             print(output6)
             print(output7)
+        elif isinstance(packet, dpkt.ip6.IP6):  # IPv6
+            pass
+        elif isinstance(packet, dpkt.arp.ARP):  # ARP
+            pass
         else:
-            print("Non IPv4 packet type not supported ", packet.__class__.__name__)
+            print("Non IPv4/IPv6/ARP packet type not supported ", packet.__class__.__name__)
 
         self.parse_layer3(packet.data)
 
@@ -300,7 +304,9 @@ class PacketParser:
                 self.layer4['body'] = body
 
             elif isinstance(packet, dpkt.http.Response):  # Response
-                pass
+                self.layer4['version'] = packet.version
+                self.layer4['statusCode'] = packet.status
+                self.layer4['responsePhrase'] = packet.reason
         else:
             print("Non HTTP packet type not supported ", packet.__class__.__name__)
 
