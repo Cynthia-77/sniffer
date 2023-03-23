@@ -289,6 +289,37 @@ class SnifferController:
             checksum.setText(0, 'Checksum: %s' % pkt_parser.layer3['checksum'])
             urp = QtWidgets.QTreeWidgetItem(tcp)
             urp.setText(0, 'Urgent Pointer: %s' % pkt_parser.layer3['urg'])
+            if pkt_parser.layer3['optsLen'] == 0:
+                opts = QtWidgets.QTreeWidgetItem(tcp)
+                opts.setText(0, 'Options: (%s bytes)' % pkt_parser.layer3['optsLen'])
+            else:
+                opts = QtWidgets.QTreeWidgetItem(tcp)
+                opts.setText(0, 'Options: (%s bytes), %s' % (pkt_parser.layer3['optsLen'], pkt_parser.layer3['opts']))
+                for detail in pkt_parser.layer3['optsDetail']:
+                    opt = QtWidgets.QTreeWidgetItem(opts)
+                    opt.setText(0, 'TCP Option - %s' % detail['opt'])
+                    kind = QtWidgets.QTreeWidgetItem(opt)
+                    kind.setText(0, 'Kind: %s' % detail['kind'])
+                    if detail['num'] == 1:  # NOP
+                        continue
+                    elif detail['num'] == 2:  # MSS
+                        length = QtWidgets.QTreeWidgetItem(opt)
+                        length.setText(0, 'Length: %s' % detail['len'])
+                        mss = QtWidgets.QTreeWidgetItem(opt)
+                        mss.setText(0, 'MSS Value: %s' % detail['mss'])
+                    elif detail['num'] == 3:  # WS
+                        length = QtWidgets.QTreeWidgetItem(opt)
+                        length.setText(0, 'Length: %s' % detail['len'])
+                        sc = QtWidgets.QTreeWidgetItem(opt)
+                        sc.setText(0, 'Shift count: %s' % detail['sc'])
+                        mul = QtWidgets.QTreeWidgetItem(opt)
+                        mul.setText(0, '[Multiplier: %s]' % detail['mul'])
+                    elif detail['num'] == 4:  # SACK_PERM
+                        length = QtWidgets.QTreeWidgetItem(opt)
+                        length.setText(0, 'Length: %s' % detail['len'])
+                    elif detail['num'] == 5:  # SACK
+                        length = QtWidgets.QTreeWidgetItem(opt)
+                        length.setText(0, 'Length: %s' % detail['len'])
             payload = QtWidgets.QTreeWidgetItem(tcp)
             payload.setText(0, 'TCP payload (%s bytes)' % pkt_parser.layer3['payload'])
 

@@ -24,7 +24,8 @@ class PacketParser:
         self.layer3 = {'name': None, 'sport': None, 'dport': None, 'seq': None, 'ack': None, 'headerLen': None,
                        'headerLenBytes': None, 'flags': None, 'rf': None, 'ecn': None, 'cwr': None, 'ece': None,
                        'urg': None, 'ackFlag': None, 'psh': None, 'rst': None, 'syn': None, 'fin': None, 'window': None,
-                       'checksum': None, 'urp': None, 'opts': None, 'payload': None}
+                       'checksum': None, 'urp': None, 'opts': None, 'optsLen': None, 'optsDetail': None,
+                       'payload': None}
         # 应用层 HTTP (HTTPS TLS DNS SSL FTP SSDP QUIC
         self.layer4 = {'name': None, 'method': None, 'url': None, 'version': None, 'headers': None, 'host': None,
                        'userAgent': None, 'body': None, 'statusCode': None, 'responsePhrase': None}
@@ -118,6 +119,10 @@ class PacketParser:
             mf = packet.mf  # more fragments (not last frag)
             flags = str(rf) + str(df) + str(mf)
             flags = hex(int(flags, 2))
+            if df:
+                flags += ', Don\'t fragment'
+            if mf:
+                flags += ', More fragments'
             offset = packet.offset
             ttl = packet.ttl
             protocol = packet.p  # tcp udp
@@ -297,8 +302,6 @@ class PacketParser:
             window_size = packet.win
             pkt_checksum = '0x{:04x}'.format(packet.sum)
             urp = packet.urp
-            opts = packet.opts
-            opts = dpkt.tcp.parse_opts(opts)
             payload = len(packet.data)
 
             self.layer3['name'] = 'TCP'
@@ -308,7 +311,6 @@ class PacketParser:
             self.layer3['ack'] = ack
             self.layer3['headerLen'] = header_len
             self.layer3['headerLenBytes'] = header_len_bytes
-            self.layer3['flags'] = flags
             self.layer3['rf'] = rf
             self.layer3['ecn'] = ecn
             self.layer3['cwr'] = cwr
@@ -322,11 +324,94 @@ class PacketParser:
             self.layer3['window'] = window_size
             self.layer3['checksum'] = pkt_checksum
             self.layer3['urp'] = urp
-            self.layer3['opts'] = opts
             self.layer3['payload'] = payload
 
             self.info['protocol'] = 'TCP'
-            self.info['info'] = str(sport) + ' --> ' + str(dport)
+
+            info = str(sport) + ' --> ' + str(dport)
+            info += ' ['
+            temp = ''
+            if syn:
+                temp += 'SYN, '
+            if fin:
+                temp += 'FIN, '
+            if psh:
+                temp += 'PSH, '
+            if rst:
+                temp += 'RST, '
+            if ack_flag:
+                temp += 'ACK, '
+            print(temp)
+            temp = temp[:-2]
+            print(temp)
+            info += temp
+            info += ']'
+            info += ' Seq=%s' % seq
+            if ack_flag:
+                info += ' Ack=%s' % ack
+            info += ' Win=%s Len=%s' % (window_size, payload)
+
+            flags += ' (%s)' % temp
+            self.layer3['flags'] = flags
+
+            pkt_opts = packet.opts
+            opts_len = len(pkt_opts)  # bytes
+            # print('options:')
+            # print(opts)
+            pkt_opts_parse = dpkt.tcp.parse_opts(pkt_opts)
+            # print(opts)
+            if opts_len > 0:
+                details = []
+                opts = ''
+                for opt, data in pkt_opts_parse:  # data是字节流
+                    print(opt)
+                    if opt == 1:  # NOP
+                        option = 'No-Operation (NOP)'
+                        kind = 'No-Operation (1)'
+                        detail = {'num': opt, 'opt': option, 'kind': kind}
+                        details.append(detail)
+                        opts += 'No-Operation (NOP), '
+                    elif opt == 2:  # MSS
+                        kind = 'Maximum Segment Size (2)'
+                        length = 2 + len(data)
+                        mss = int.from_bytes(data, 'big')
+                        option = 'Maximum segment size: %s bytes' % mss
+                        detail = {'num': opt, 'opt': option, 'kind': kind, 'len': length, 'mss': mss}
+                        details.append(detail)
+                        opts += 'Maximum segment size, '
+                        info += ' MSS=%s' % mss
+                    elif opt == 3:  # WS
+                        kind = 'Window Scale (3)'
+                        length = 2 + len(data)
+                        sc = int.from_bytes(data, 'big')
+                        mul = 2 ** sc
+                        option = 'Window scale: %s (multiply by %s)' % (sc, mul)
+                        detail = {'num': opt, 'opt': option, 'kind': kind, 'len': length, 'sc': sc, 'mul': mul}
+                        details.append(detail)
+                        opts += 'Window scale, '
+                        info += ' WS=%s' % mul
+                    elif opt == 4:  # SACK_PERM
+                        kind = 'SACK Permitted (4)'
+                        length = 2 + len(data)
+                        option = 'SACK permitted'
+                        detail = {'num': opt, 'opt': option, 'kind': kind, 'len': length}
+                        details.append(detail)
+                        opts += 'SACK permitted, '
+                        info += ' SACK_PERM'
+                    elif opt == 5:  # SACK
+                        kind = 'SACK (5)'
+                        length = 2 + len(data)
+                        option = 'SACK'
+                        detail = {'num': opt, 'opt': option, 'kind': kind, 'len': length}
+                        details.append(detail)
+                        opts += 'SACK, '
+                        info += ' SACK'
+                opts = opts[:-2]
+                self.layer3['opts'] = opts
+                self.layer3['optsDetail'] = details
+            self.layer3['optsLen'] = opts_len
+
+            self.info['info'] = info
 
             # 输出数据包信息
             output1 = {'type': packet_type}
@@ -335,7 +420,7 @@ class PacketParser:
             output7 = {'offset': header_len}
             output4 = {'flags': flags, 'window': window_size}
             output5 = {'urgent pointer': urp}
-            output6 = {'options': opts}
+            output6 = {'options': pkt_opts_parse}
             print(output1)
             print(output2)
             print(output3)
