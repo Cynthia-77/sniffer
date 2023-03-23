@@ -20,13 +20,13 @@ class PacketParser:
                        'checksum': None, 'trafficClass': None, 'ecn': None, 'dsc': None, 'flowLab': None,
                        'payloadLen': None, 'nxtHeader': None, 'hopLim': None, 'hrdType': None, 'hrdLen': None,
                        'protocolLen': None, 'op': None, 'smac': None, 'sip': None, 'tmac': None, 'tip': None}
-        # 传输层 TCP UDP IGMP (ICMP
+        # 传输层 TCP UDP IGMP ICMPv6 (ICMP
         self.layer3 = {'name': None, 'sport': None, 'dport': None, 'seq': None, 'ack': None, 'headerLen': None,
                        'headerLenBytes': None, 'flags': None, 'rf': None, 'ecn': None, 'cwr': None, 'ece': None,
                        'urg': None, 'ackFlag': None, 'psh': None, 'rst': None, 'syn': None, 'fin': None, 'window': None,
                        'checksum': None, 'urp': None, 'opts': None, 'optsLen': None, 'optsDetail': None,
                        'payload': None, 'type': None, 'rf1': None, 'rf2': None, 'ngr': None, 'recordTypeNum': None,
-                       'recordType': None, 'adlen': None, 'numSrc': None, 'mulAddr': None}
+                       'recordType': None, 'adlen': None, 'numSrc': None, 'mulAddr': None, 'code': None}
         # 应用层 HTTP (HTTPS TLS DNS SSL FTP SSDP QUIC
         self.layer4 = {'name': None, 'method': None, 'url': None, 'version': None, 'headers': None, 'host': None,
                        'userAgent': None, 'body': None, 'statusCode': None, 'responsePhrase': None}
@@ -277,7 +277,7 @@ class PacketParser:
         if len(packet) == 0:  # 如果传输负载长度为0，即该包为单纯的arp包，没有负载，则丢弃
             return
 
-        packet_type = type(packet)  # TCP UDP IGMP
+        packet_type = type(packet)  # TCP UDP IGMP ICMPv6
         print(packet_type)
 
         # 判断数据报类型
@@ -477,8 +477,30 @@ class PacketParser:
 
             self.info['protocol'] = 'IGMPv3'
 
+            print(self.layer3)
+
+        elif isinstance(packet, dpkt.icmp6.ICMP6):  # ICMPv6
+            self.layer3['name'] = 'ICMPv6'
+            typ = packet.type
+            if typ == 134:
+                self.layer3['type'] = 'Router Advertisement (134)'
+                self.info['info'] = 'Router Advertisement'
+            elif typ == 143 or typ == 131:
+                self.layer3['type'] = 'Multicast Listener Report Message (143)'
+                self.info['info'] = 'Multicast Listener Report Message'
+            elif typ == 135:
+                self.layer3['type'] = 'Neighbour Solicitation (135)'
+                self.info['info'] = 'Neighbour Solicitation'
+            elif typ == 136:
+                self.layer3['type'] = 'Neighbour Advertisement (136)'
+                self.info['info'] = 'Neighbour Advertisement'
+            self.layer3['code'] = packet.code
+            self.layer3['checksum'] = '0x{:04x}'.format(packet.sum)
+
+            self.info['protocol'] = 'ICMPv6'
+
         else:
-            print("Non TCP/UDP/IGMP packet type not supported ", packet.__class__.__name__)
+            print("Non TCP/UDP/IGMP/ICMPv6 packet type not supported ", packet.__class__.__name__)
 
         self.parse_layer4(packet.data)
 

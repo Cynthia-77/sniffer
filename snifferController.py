@@ -363,6 +363,16 @@ class SnifferController:
             ns.setText(0, 'Num Src: %s' % pkt_parser.layer3['numSrc'])
             mul_a = QtWidgets.QTreeWidgetItem(gr)
             mul_a.setText(0, 'Multicast Address: %s' % pkt_parser.layer3['mulAddr'])
+
+        elif pkt_parser.layer3['name'] == 'ICMPv6':  # ICMPv6
+            icmp6 = QtWidgets.QTreeWidgetItem(self.ui.packetDetail)
+            icmp6.setText(0, 'ICMPv6')
+            typ = QtWidgets.QTreeWidgetItem(icmp6)
+            typ.setText(0, 'Type: %s' % pkt_parser.layer3['type'])
+            code = QtWidgets.QTreeWidgetItem(icmp6)
+            code.setText(0, 'Code: %s' % (pkt_parser.layer3['code']))
+            checksum = QtWidgets.QTreeWidgetItem(icmp6)
+            checksum.setText(0, 'Checksum: %s' % pkt_parser.layer3['checksum'])
         else:
             pass
 
