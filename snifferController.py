@@ -380,9 +380,41 @@ class SnifferController:
         if pkt_parser.layer4['name'] is None:
             return
         if pkt_parser.layer4['name'] == 'HTTP':  # HTTP
-            pass
+            http = QtWidgets.QTreeWidgetItem(self.ui.packetDetail)
+            http.setText(0, 'HTTP')
+            # if pkt_parser.layer4['type'] == 'Request':  # Request
+            #     method = QtWidgets.QTreeWidgetItem(http)
+            #     method.setText(0, 'Request Method: %s' % pkt_parser.layer4['method'])
+            #     uri = QtWidgets.QTreeWidgetItem(http)
+            #     uri.setText(0, 'Request URI: %s' % pkt_parser.layer4['uri'])
+            #     v = QtWidgets.QTreeWidgetItem(http)
+            #     v.setText(0, 'Request Version: %s' % pkt_parser.layer4['version'])
+            #     cl = QtWidgets.QTreeWidgetItem(http)
+            #     cl.setText(0, 'Content Length: %s' % pkt_parser.layer4['headers']['content-length'])
+            #     ct = QtWidgets.QTreeWidgetItem(http)
+            #     ct.setText(0, 'Content Type: %s' % pkt_parser.layer4['headers']['content-type'])
+            #     host = QtWidgets.QTreeWidgetItem(http)
+            #     host.setText(0, 'Host: %s' % pkt_parser.layer4['headers']['host'])
+            #     ua = QtWidgets.QTreeWidgetItem(http)
+            #     ua.setText(0, 'User-Agent: %s' % pkt_parser.layer4['headers']['user-agent'])
+            #     dl = QtWidgets.QTreeWidgetItem(http)
+            #     dl.setText(0, 'File Data: %s bytes' % pkt_parser.layer4['dataLen'])
+            #     data = QtWidgets.QTreeWidgetItem(self.ui.packetDetail)
+            #     data.setText(0, 'Data (%s bytes)' % pkt_parser.layer4['dataLen'])
+            #     d = QtWidgets.QTreeWidgetItem(data)
+            #     d.setText(0, 'Data: ' % pkt_parser.layer4['body'])
+            # elif pkt_parser.layer4['type'] == 'Response':  # Response
+            #     pass
         elif pkt_parser.layer4['name'] == 'DNS':  # DNS
-            pass
+            dns = QtWidgets.QTreeWidgetItem(self.ui.packetDetail)
+            if self.layer4['op'] == 'Standard query':
+                dns.setText(0, 'DNS (query)')
+            else:
+                dns.setText(0, 'DNS (response)')
+            id1 = QtWidgets.QTreeWidgetItem(dns)
+            id1.setText(0, 'Transaction ID: %s' % pkt_parser.layer4['id'])
+            flags = QtWidgets.QTreeWidgetItem(dns)
+            flags.setText(0, 'Flags: %s %s' % (pkt_parser.layer4['flags'], pkt_parser.layer4['op']))
         else:
             pass
 

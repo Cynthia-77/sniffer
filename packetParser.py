@@ -28,8 +28,9 @@ class PacketParser:
                        'payload': None, 'type': None, 'rf1': None, 'rf2': None, 'ngr': None, 'recordTypeNum': None,
                        'recordType': None, 'adlen': None, 'numSrc': None, 'mulAddr': None, 'code': None}
         # 应用层 HTTP (HTTPS TLS DNS SSL FTP SSDP QUIC
-        self.layer4 = {'name': None, 'method': None, 'url': None, 'version': None, 'headers': None, 'host': None,
-                       'userAgent': None, 'body': None, 'statusCode': None, 'responsePhrase': None}
+        self.layer4 = {'name': None, 'type': None, 'method': None, 'url': None, 'version': None, 'headers': None,
+                       'host': None, 'userAgent': None, 'body': None, 'statusCode': None, 'responsePhrase': None,
+                       'dataLen': None, 'op': None, 'flags': None, 'id': None}
 
     # 抓包监听
     def packet_callback(self, pkt_data):
@@ -365,7 +366,6 @@ class PacketParser:
                 details = []
                 opts = ''
                 for opt, data in pkt_opts_parse:  # data是字节流
-                    print(opt)
                     if opt == 1:  # NOP
                         option = 'No-Operation (NOP)'
                         kind = 'No-Operation (1)'
@@ -464,16 +464,16 @@ class PacketParser:
             self.layer3['checksum'] = '0x{:04x}'.format(packet.sum)
             self.layer3['rf2'] = '0000'
             self.layer3['ngr'] = packet.group
-            self.layer3['recordTypeNum'] = int.from_bytes(packet[8], 'big')
-            self.layer3['mulAddr'] = '%d.%d.%d.%d' % tuple(packet[12:])
-            if self.layer3['recordTypeNum'] == 3:
-                self.layer3['recordType'] = 'Change To Include Mode'
-                self.info['info'] = 'Membership Report / Leave group %s' % self.layer3['mulAddr']
-            elif self.layer3['recordTypeNum'] == 4:
-                self.layer3['recordType'] = 'Change To Exclude Mode'
-                self.info['info'] = 'Membership Report / Join group %s for any sources' % self.layer3['mulAddr']
-            self.layer3['adlen'] = int.from_bytes(packet[9], 'big')
-            self.layer3['numSrc'] = int.from_bytes(packet[10:12], 'big')
+            # self.layer3['recordTypeNum'] = int.from_bytes(packet[8], 'big')
+            # self.layer3['mulAddr'] = '%d.%d.%d.%d' % tuple(packet[12:])
+            # if self.layer3['recordTypeNum'] == 3:
+            #     self.layer3['recordType'] = 'Change To Include Mode'
+            #     self.info['info'] = 'Membership Report / Leave group %s' % self.layer3['mulAddr']
+            # elif self.layer3['recordTypeNum'] == 4:
+            #     self.layer3['recordType'] = 'Change To Exclude Mode'
+            #     self.info['info'] = 'Membership Report / Join group %s for any sources' % self.layer3['mulAddr']
+            # self.layer3['adlen'] = int.from_bytes(packet[9], 'big')
+            # self.layer3['numSrc'] = int.from_bytes(packet[10:12], 'big')
 
             self.info['protocol'] = 'IGMPv3'
 
@@ -505,30 +505,69 @@ class PacketParser:
         self.parse_layer4(packet.data)
 
     def parse_layer4(self, packet):  # 应用层
-        if not len(packet):  # 如果应用层负载长度为0，即该包为单纯的tcp/udp包，没有负载，则丢弃
+        if len(packet) == 0:  # 如果应用层负载长度为0，即该包为单纯的tcp/udp包，没有负载，则丢弃
             return
 
         packet_type = type(packet)  # HTTP
         print(packet_type)
+        print(packet)
 
-        if isinstance(packet, dpkt.http.Message):  # HTTP
+        try:
+            request = dpkt.http.Request(packet)
+            print("suc")
+            print('HTTP request: %s\n' % repr(request))
+        except (dpkt.dpkt.NeedData, dpkt.dpkt.UnpackError):
+            print("1")
+
+        if self.layer3['sport'] == 80 or self.layer3['dport'] == 80:  # HTTP
+            print("HTTP")
+            # packet = dpkt.http.Message(packet)
             self.layer4['name'] = 'HTTP'
             self.info['protocol'] = 'HTTP'
-            if isinstance(packet, dpkt.http.Request):  # Request
-                self.layer4['method'] = packet.method
-                self.layer4['url'] = packet.uri
-                self.layer4['version'] = packet.version
-                self.layer4['headers'] = packet.headers
-                self.layer4['host'] = packet.headers['host']
-                self.layer4['userAgent'] = packet.headers['user-agent']
-                self.layer4['body'] = packet.body
 
-            elif isinstance(packet, dpkt.http.Response):  # Response
-                self.layer4['version'] = packet.version
-                self.layer4['statusCode'] = packet.status
-                self.layer4['responsePhrase'] = packet.reason
-                self.layer4['headers'] = packet.headers
-                self.layer4['body'] = packet.body
+            # if packet.haslayer('HTTPRequest'):
+            #     self.info['info'] = ('%s %s %s' % (packet.sprintf("{HTTPRequest:%HTTPRequest.Method%}").strip("'"),
+            #                                        packet.sprintf("{HTTPRequest:%HTTPRequest.Path%}").strip("'"),
+            #                                        packet.sprintf("{HTTPRequest:%HTTPRequest.Http-Version%}").strip(
+            #                                            "'")))
+            # elif packet.haslayer('HTTPResponse'):
+            #     self.info['info'] = ('%s' % packet.sprintf("{HTTPResponse:%HTTPResponse.Status-Line%}").strip("'"))
+
+            # if isinstance(packet, dpkt.http.Request):  # Request
+            #     self.layer4['type'] = 'Request'
+            #     self.layer4['method'] = packet.method
+            #     self.layer4['url'] = packet.uri
+            #     self.layer4['version'] = packet.version
+            #     self.layer4['headers'] = packet.headers
+            #     self.layer4['host'] = packet.headers['host']
+            #     self.layer4['userAgent'] = packet.headers['user-agent']
+            #     self.layer4['body'] = packet.body
+            #     self.layer4['dataLen'] = len(packet.body)
+            #
+            #     self.info['info'] = self.layer4['method'] + self.layer4['uri'] + self.layer4['version']
+            #
+            # elif isinstance(packet, dpkt.http.Response):  # Response
+            #     self.layer4['type'] = 'Response'
+            #     self.layer4['version'] = packet.version
+            #     self.layer4['statusCode'] = packet.status
+            #     self.layer4['responsePhrase'] = packet.reason
+            #     self.layer4['headers'] = packet.headers
+            #     self.layer4['body'] = packet.body
+
+        elif isinstance(packet, dpkt.dns.DNS):  # DNS
+            self.layer4['id'] = '0x{:04x}'.format(packet.id)
+            op = packet.op
+            self.layer4['flags'] = '0x{:04x}'.format(op)
+            if op == 0x0100:
+                self.layer4['op'] = 'Standard query'
+                self.info['info'] = 'Standard query'
+            elif op == 0x8180:
+                self.layer4['op'] = 'Standard query response'
+                self.info['info'] = 'Standard query response'
+
+            self.info['protocol'] = 'DNS'
+            self.info['info'] += self.layer4['id']
+
         else:
             print("Non HTTP packet type not supported ", packet.__class__.__name__)
 
@@ -539,6 +578,14 @@ class PacketParser:
 
 
 if __name__ == '__main__':
+    with open('http.pcap', 'rb') as f:
+        capture = dpkt.pcap.Reader(f)
+        # For each packet in the pcap process the contents
+        for timestamp, buf in capture:
+            pkt_parser = PacketParser(0)
+            start_time = time.time()
+            pkt_parser.parse(timestamp, buf, start_time)
+
     # Return a list of all the devices detected on the machine
     devices = []
     for i in repr(conf.route).split('\n')[1:]:
