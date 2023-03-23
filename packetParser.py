@@ -17,7 +17,8 @@ class PacketParser:
         self.layer2 = {'name': None, 'src': None, 'dst': None, 'version': None, 'headerLen': None,
                        'headerLenBytes': None, 'tos': None, 'totLen': None, 'identification': None, 'flags': None,
                        'rf': None, 'df': None, 'mf': None, 'offset': None, 'ttl': None, 'protocol': None,
-                       'checksum': None}
+                       'checksum': None, 'trafficClass': None, 'ecn': None, 'dsc': None, 'flowLab': None,
+                       'payloadLen': None, 'nxtHeader': None, 'hopLim': None}
         # 传输层 TCP UDP (ICMP
         self.layer3 = {'name': None, 'sport': None, 'dport': None, 'seq': None, 'ack': None, 'headerLen': None,
                        'headerLenBytes': None, 'flags': None, 'rf': None, 'ecn': None, 'cwr': None, 'ece': None,
@@ -98,6 +99,8 @@ class PacketParser:
         if isinstance(packet, dpkt.ip.IP):  # IPv4
             # 取出分片信息
             src = packet.src
+            print(type(src))
+            print(src)
             src = '%d.%d.%d.%d' % tuple(src)
             dst = packet.dst
             dst = '%d.%d.%d.%d' % tuple(dst)
@@ -116,9 +119,11 @@ class PacketParser:
             ttl = packet.ttl
             protocol = packet.p  # tcp udp
             if protocol == 6:  # TCP
-                protocol = 'TCP (' + str(protocol) + ')'
+                protocol = 'TCP (6)'
             elif protocol == 17:  # UDP
-                protocol = 'UDP (' + str(protocol) + ')'
+                protocol = 'UDP (17)'
+            elif protocol == 1:  # ICMP
+                protocol = 'UDP (1)'
             pkt_checksum = '0x{:04x}'.format(packet.sum)
 
             self.layer2['name'] = 'IPv4'
@@ -163,7 +168,52 @@ class PacketParser:
             print(output6)
             print(output7)
         elif isinstance(packet, dpkt.ip6.IP6):  # IPv6
-            pass
+            src = packet.src
+            src = ":".join(['%x' % (src[i] * 16 ** 2 + src[i + 1]) for i in range(0, len(src), 2)])
+            dst = packet.dst
+            dst = ":".join(['%x' % (dst[i] * 16 ** 2 + dst[i + 1]) for i in range(0, len(dst), 2)])
+            version = packet.v
+            pkt_tc = packet.fc
+            traffic_class = '0x{:02x}'.format(pkt_tc)
+            ecn = pkt_tc & 3
+            dsc = pkt_tc >> 2
+            flow_label = '0x{:x}'.format(packet.flow)
+            payload_len = packet.plen
+            nxt_header = packet.nxt
+            if nxt_header == 6:  # TCP
+                nxt_header = 'TCP (6)'
+            elif nxt_header == 17:  # UDP
+                nxt_header = 'UDP (17)'
+            elif nxt_header == 58:  # ICMPv6
+                nxt_header = 'ICMPv6 (58)'
+            elif nxt_header == 0:  # IPv6 hop-by-hop options
+                nxt_header = 'IPv6 Hop-by-Hop Option (0)'
+            hop_lim = packet.hlim
+
+            self.layer2['name'] = 'IPv6'
+            self.layer2['src'] = src
+            self.layer2['dst'] = dst
+            self.layer2['version'] = version
+            self.layer2['trafficClass'] = traffic_class
+            self.layer2['ecn'] = ecn
+            self.layer2['dsc'] = dsc
+            self.layer2['flowLab'] = flow_label
+            self.layer2['payloadLen'] = payload_len
+            self.layer2['nxtHeader'] = nxt_header
+            self.layer2['hopLim'] = hop_lim
+
+            self.info['src'] = src
+            self.info['dst'] = dst
+            self.info['protocol'] = 'IPv6'
+
+            # 输出数据包信息
+            output1 = {'type': packet_type, 'version': version}
+            output2 = {'src': src, 'dst': dst}
+            output3 = {'dsc': dsc}
+            print(output1)
+            print(output2)
+            print(output3)
+
         elif isinstance(packet, dpkt.arp.ARP):  # ARP
             pass
         else:
@@ -287,26 +337,20 @@ class PacketParser:
             self.layer4['name'] = 'HTTP'
             self.info['protocol'] = 'HTTP'
             if isinstance(packet, dpkt.http.Request):  # Request
-                method = packet.method
-                url = packet.uri
-                version = packet.version
-                headers = packet.headers
-                host = packet.headers['host']
-                user_agent = packet.headers['user-agent']
-                body = packet.body
-
-                self.layer4['method'] = method
-                self.layer4['url'] = url
-                self.layer4['version'] = version
-                self.layer4['headers'] = headers
-                self.layer4['host'] = host
-                self.layer4['userAgent'] = user_agent
-                self.layer4['body'] = body
+                self.layer4['method'] = packet.method
+                self.layer4['url'] = packet.uri
+                self.layer4['version'] = packet.version
+                self.layer4['headers'] = packet.headers
+                self.layer4['host'] = packet.headers['host']
+                self.layer4['userAgent'] = packet.headers['user-agent']
+                self.layer4['body'] = packet.body
 
             elif isinstance(packet, dpkt.http.Response):  # Response
                 self.layer4['version'] = packet.version
                 self.layer4['statusCode'] = packet.status
                 self.layer4['responsePhrase'] = packet.reason
+                self.layer4['headers'] = packet.headers
+                self.layer4['body'] = packet.body
         else:
             print("Non HTTP packet type not supported ", packet.__class__.__name__)
 

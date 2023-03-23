@@ -158,7 +158,7 @@ class SnifferController:
         typ.setText(0, 'Type: %s' % pkt_parser.layer1['type'])
 
     def set_layer2(self, pkt_parser):
-        if pkt_parser.layer2['name'] == 'IPv4':
+        if pkt_parser.layer2['name'] == 'IPv4':  # IPv4
             ipv4 = QtWidgets.QTreeWidgetItem(self.ui.packetDetail)
             ipv4.setText(0, 'IPv4, Src: %s, Dst: %s' % (pkt_parser.layer2['src'], pkt_parser.layer2['dst']))
             version = QtWidgets.QTreeWidgetItem(ipv4)
@@ -191,6 +191,30 @@ class SnifferController:
             src = QtWidgets.QTreeWidgetItem(ipv4)
             src.setText(0, 'Source Address: %s' % pkt_parser.layer2['src'])
             dst = QtWidgets.QTreeWidgetItem(ipv4)
+            dst.setText(0, 'Destination Address: %s' % pkt_parser.layer2['dst'])
+
+        elif pkt_parser.layer2['name'] == 'IPv6':  # IPv6
+            ipv6 = QtWidgets.QTreeWidgetItem(self.ui.packetDetail)
+            ipv6.setText(0, 'IPv6, Src: %s, Dst: %s' % (pkt_parser.layer2['src'], pkt_parser.layer2['dst']))
+            version = QtWidgets.QTreeWidgetItem(ipv6)
+            version.setText(0, 'Version: %s' % pkt_parser.layer2['version'])
+            tc = QtWidgets.QTreeWidgetItem(ipv6)
+            tc.setText(0, 'Traffic Class: %s' % pkt_parser.layer2['trafficClass'])
+            dsc = QtWidgets.QTreeWidgetItem(tc)
+            dsc.setText(0, 'Differentiated Services Codepoint: %s' % pkt_parser.layer2['dsc'])
+            ecn = QtWidgets.QTreeWidgetItem(tc)
+            ecn.setText(0, 'Explicit Congestion Notification: %s' % pkt_parser.layer2['ecn'])
+            fl = QtWidgets.QTreeWidgetItem(ipv6)
+            fl.setText(0, 'Flow Label: %s' % pkt_parser.layer2['flowLab'])
+            p_lem = QtWidgets.QTreeWidgetItem(ipv6)
+            p_lem.setText(0, 'Payload Length: %s' % pkt_parser.layer2['payloadLen'])
+            nxt_h = QtWidgets.QTreeWidgetItem(ipv6)
+            nxt_h.setText(0, 'Next Header: %s' % pkt_parser.layer2['nxtHeader'])
+            hl = QtWidgets.QTreeWidgetItem(ipv6)
+            hl.setText(0, 'Hop Limit: %s' % pkt_parser.layer2['hopLim'])
+            src = QtWidgets.QTreeWidgetItem(ipv6)
+            src.setText(0, 'Source Address: %s' % pkt_parser.layer2['src'])
+            dst = QtWidgets.QTreeWidgetItem(ipv6)
             dst.setText(0, 'Destination Address: %s' % pkt_parser.layer2['dst'])
         else:
             pass
