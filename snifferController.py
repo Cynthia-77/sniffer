@@ -337,6 +337,32 @@ class SnifferController:
             payload = QtWidgets.QTreeWidgetItem(udp)
             payload.setText(0, 'UDP payload (%s bytes)' % pkt_parser.layer3['payload'])
 
+        elif pkt_parser.layer3['name'] == 'IGMP':  # IGMP
+            igmp = QtWidgets.QTreeWidgetItem(self.ui.packetDetail)
+            igmp.setText(0, 'IGMP')
+            v = QtWidgets.QTreeWidgetItem(igmp)
+            v.setText(0, '[IGMP Version: 3]')
+            typ = QtWidgets.QTreeWidgetItem(igmp)
+            typ.setText(0, 'Type: %s' % pkt_parser.layer3['type'])
+            rf1 = QtWidgets.QTreeWidgetItem(igmp)
+            rf1.setText(0, 'Reserved: %s' % (pkt_parser.layer3['rf1']))
+            checksum = QtWidgets.QTreeWidgetItem(igmp)
+            checksum.setText(0, 'Checksum: %s' % pkt_parser.layer3['checksum'])
+            rf2 = QtWidgets.QTreeWidgetItem(igmp)
+            rf2.setText(0, 'Reserved: %s' % (pkt_parser.layer3['rf2']))
+            ngr = QtWidgets.QTreeWidgetItem(igmp)
+            ngr.setText(0, 'Num Group Records: %s' % (pkt_parser.layer3['ngr']))
+            gr = QtWidgets.QTreeWidgetItem(igmp)
+            gr.setText(0, 'Group Record: %s  %s' % (pkt_parser.layer3['mulAddr'], pkt_parser.layer3['recordType']))
+            rt = QtWidgets.QTreeWidgetItem(gr)
+            rt.setText(0,
+                       'Record Type: %s (%s)' % (pkt_parser.layer3['recordType'], pkt_parser.layer3['recordTypeNum']))
+            adl = QtWidgets.QTreeWidgetItem(gr)
+            adl.setText(0, 'Aux Data Len: %s' % pkt_parser.layer3['adlen'])
+            ns = QtWidgets.QTreeWidgetItem(gr)
+            ns.setText(0, 'Num Src: %s' % pkt_parser.layer3['numSrc'])
+            mul_a = QtWidgets.QTreeWidgetItem(gr)
+            mul_a.setText(0, 'Multicast Address: %s' % pkt_parser.layer3['mulAddr'])
         else:
             pass
 

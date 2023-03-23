@@ -20,12 +20,13 @@ class PacketParser:
                        'checksum': None, 'trafficClass': None, 'ecn': None, 'dsc': None, 'flowLab': None,
                        'payloadLen': None, 'nxtHeader': None, 'hopLim': None, 'hrdType': None, 'hrdLen': None,
                        'protocolLen': None, 'op': None, 'smac': None, 'sip': None, 'tmac': None, 'tip': None}
-        # 传输层 TCP UDP (ICMP
+        # 传输层 TCP UDP IGMP (ICMP
         self.layer3 = {'name': None, 'sport': None, 'dport': None, 'seq': None, 'ack': None, 'headerLen': None,
                        'headerLenBytes': None, 'flags': None, 'rf': None, 'ecn': None, 'cwr': None, 'ece': None,
                        'urg': None, 'ackFlag': None, 'psh': None, 'rst': None, 'syn': None, 'fin': None, 'window': None,
                        'checksum': None, 'urp': None, 'opts': None, 'optsLen': None, 'optsDetail': None,
-                       'payload': None}
+                       'payload': None, 'type': None, 'rf1': None, 'rf2': None, 'ngr': None, 'recordTypeNum': None,
+                       'recordType': None, 'adlen': None, 'numSrc': None, 'mulAddr': None}
         # 应用层 HTTP (HTTPS TLS DNS SSL FTP SSDP QUIC
         self.layer4 = {'name': None, 'method': None, 'url': None, 'version': None, 'headers': None, 'host': None,
                        'userAgent': None, 'body': None, 'statusCode': None, 'responsePhrase': None}
@@ -276,7 +277,7 @@ class PacketParser:
         if len(packet) == 0:  # 如果传输负载长度为0，即该包为单纯的arp包，没有负载，则丢弃
             return
 
-        packet_type = type(packet)  # TCP
+        packet_type = type(packet)  # TCP UDP IGMP
         print(packet_type)
 
         # 判断数据报类型
@@ -453,8 +454,31 @@ class PacketParser:
             print(output2)
             print(output3)
             print(output4)
+
+        elif isinstance(packet, dpkt.igmp.IGMP):  # IGMP
+            self.layer3['name'] = 'IGMP'
+            typ = packet.type
+            if typ == 0x22:
+                self.layer3['type'] = 'Membership Report (0x22)'
+            self.layer3['rf1'] = '00'
+            self.layer3['checksum'] = '0x{:04x}'.format(packet.sum)
+            self.layer3['rf2'] = '0000'
+            self.layer3['ngr'] = packet.group
+            self.layer3['recordTypeNum'] = int.from_bytes(packet[8], 'big')
+            self.layer3['mulAddr'] = '%d.%d.%d.%d' % tuple(packet[12:])
+            if self.layer3['recordTypeNum'] == 3:
+                self.layer3['recordType'] = 'Change To Include Mode'
+                self.info['info'] = 'Membership Report / Leave group %s' % self.layer3['mulAddr']
+            elif self.layer3['recordTypeNum'] == 4:
+                self.layer3['recordType'] = 'Change To Exclude Mode'
+                self.info['info'] = 'Membership Report / Join group %s for any sources' % self.layer3['mulAddr']
+            self.layer3['adlen'] = int.from_bytes(packet[9], 'big')
+            self.layer3['numSrc'] = int.from_bytes(packet[10:12], 'big')
+
+            self.info['protocol'] = 'IGMPv3'
+
         else:
-            print("Non TCP/UDP packet type not supported ", packet.__class__.__name__)
+            print("Non TCP/UDP/IGMP packet type not supported ", packet.__class__.__name__)
 
         self.parse_layer4(packet.data)
 
