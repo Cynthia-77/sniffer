@@ -13,12 +13,13 @@ class PacketParser:
                      'protocol': None, 'len': None, 'info': '', 'pktData': None}
         # 数据链路层 Ethernet
         self.layer1 = {'name': None, 'smac': None, 'dmac': None, 'type': None}
-        # 网络层 IPv4 (IPv6 ARP
+        # 网络层 IPv4 IPv6 ARP
         self.layer2 = {'name': None, 'src': None, 'dst': None, 'version': None, 'headerLen': None,
                        'headerLenBytes': None, 'tos': None, 'totLen': None, 'identification': None, 'flags': None,
                        'rf': None, 'df': None, 'mf': None, 'offset': None, 'ttl': None, 'protocol': None,
                        'checksum': None, 'trafficClass': None, 'ecn': None, 'dsc': None, 'flowLab': None,
-                       'payloadLen': None, 'nxtHeader': None, 'hopLim': None}
+                       'payloadLen': None, 'nxtHeader': None, 'hopLim': None, 'hrdType': None, 'hrdLen': None,
+                       'protocolLen': None, 'op': None, 'smac': None, 'sip': None, 'tmac': None, 'tip': None}
         # 传输层 TCP UDP (ICMP
         self.layer3 = {'name': None, 'sport': None, 'dport': None, 'seq': None, 'ack': None, 'headerLen': None,
                        'headerLenBytes': None, 'flags': None, 'rf': None, 'ecn': None, 'cwr': None, 'ece': None,
@@ -74,8 +75,12 @@ class PacketParser:
         packet_type = type(eth)  # Ethernet
         data_protocol = eth.type
 
-        if data_protocol == 0x0800:  # IP
+        if data_protocol == 0x0800:  # IPv4
             data_protocol = 'IPv4 (0x0800)'
+        elif data_protocol == 0x86DD:  # IPv6
+            data_protocol = 'IPv6 (0x86dd)'
+        elif data_protocol == 0x0806:  # ARP
+            data_protocol = 'ARP (0x0806)'
 
         self.layer1['name'] = 'Ethernet'
         self.layer1['smac'] = smac
@@ -93,14 +98,12 @@ class PacketParser:
         self.parse_layer2(eth.data)
 
     def parse_layer2(self, packet):  # 网络层
-        packet_type = type(packet)  # IPv4
+        packet_type = type(packet)  # IPv4 IPv6 ARP
 
         # 判断数据报类型
         if isinstance(packet, dpkt.ip.IP):  # IPv4
             # 取出分片信息
             src = packet.src
-            print(type(src))
-            print(src)
             src = '%d.%d.%d.%d' % tuple(src)
             dst = packet.dst
             dst = '%d.%d.%d.%d' % tuple(dst)
@@ -123,7 +126,9 @@ class PacketParser:
             elif protocol == 17:  # UDP
                 protocol = 'UDP (17)'
             elif protocol == 1:  # ICMP
-                protocol = 'UDP (1)'
+                protocol = 'ICMP (1)'
+            elif protocol == 2:  # IGMP
+                protocol = 'IGMP (2)'
             pkt_checksum = '0x{:04x}'.format(packet.sum)
 
             self.layer2['name'] = 'IPv4'
@@ -204,6 +209,7 @@ class PacketParser:
 
             self.info['src'] = src
             self.info['dst'] = dst
+            self.info['len'] = str(42)
             self.info['protocol'] = 'IPv6'
 
             # 输出数据包信息
@@ -215,7 +221,47 @@ class PacketParser:
             print(output3)
 
         elif isinstance(packet, dpkt.arp.ARP):  # ARP
-            pass
+            self.layer2['name'] = 'ARP'
+            hrd = packet.hrd
+            if hrd == 1:  # Ethernet
+                hrd = 'Ethernet (1)'
+            self.layer2['hrdType'] = hrd
+            protocol = packet.pro
+            if protocol == 0x0800:  # IPv4
+                protocol = 'IPv4 (0x0800)'
+            self.layer2['protocol'] = protocol
+            self.layer2['hrdLen'] = packet.hln
+            self.layer2['protocolLen'] = packet.pln
+            pkt_op = packet.op
+            if pkt_op == 1:  # request
+                op = 'request (1)'
+            elif pkt_op == 2:  # reply
+                op = 'reply (2)'
+            self.layer2['op'] = op
+            smac = ":".join(["%02x" % (b) for b in packet.sha])
+            self.layer2['smac'] = smac
+            sip = '%d.%d.%d.%d' % tuple(packet.spa)
+            self.layer2['sip'] = sip
+            tmac = ":".join(["%02x" % (b) for b in packet.tha])
+            self.layer2['tmac'] = tmac
+            tip = '%d.%d.%d.%d' % tuple(packet.tpa)
+            self.layer2['tip'] = tip
+            if pkt_op == 1:  # request
+                op_type = 'request'
+            elif pkt_op == 2:  # reply
+                op_type = 'reply'
+            self.layer2['type'] = op_type
+
+            self.info['src'] = smac
+            self.info['dst'] = tmac
+            self.info['protocol'] = 'ARP'
+            if pkt_op == 1:  # request
+                self.info['info'] = 'Who has %s? Tell %s' % (tip, sip)
+            elif pkt_op == 2:  # reply
+                self.info['info'] = '%s is at %s' % (sip, smac)
+
+            return
+
         else:
             print("Non IPv4/IPv6/ARP packet type not supported ", packet.__class__.__name__)
 
@@ -226,6 +272,7 @@ class PacketParser:
             return
 
         packet_type = type(packet)  # TCP
+        print(packet_type)
 
         # 判断数据报类型
         if isinstance(packet, dpkt.tcp.TCP):  # 解包，判断传输层协议是否是TCP，即当你只需要TCP时，可用来过滤

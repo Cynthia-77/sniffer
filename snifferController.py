@@ -206,8 +206,8 @@ class SnifferController:
             ecn.setText(0, 'Explicit Congestion Notification: %s' % pkt_parser.layer2['ecn'])
             fl = QtWidgets.QTreeWidgetItem(ipv6)
             fl.setText(0, 'Flow Label: %s' % pkt_parser.layer2['flowLab'])
-            p_lem = QtWidgets.QTreeWidgetItem(ipv6)
-            p_lem.setText(0, 'Payload Length: %s' % pkt_parser.layer2['payloadLen'])
+            p_len = QtWidgets.QTreeWidgetItem(ipv6)
+            p_len.setText(0, 'Payload Length: %s' % pkt_parser.layer2['payloadLen'])
             nxt_h = QtWidgets.QTreeWidgetItem(ipv6)
             nxt_h.setText(0, 'Next Header: %s' % pkt_parser.layer2['nxtHeader'])
             hl = QtWidgets.QTreeWidgetItem(ipv6)
@@ -216,6 +216,29 @@ class SnifferController:
             src.setText(0, 'Source Address: %s' % pkt_parser.layer2['src'])
             dst = QtWidgets.QTreeWidgetItem(ipv6)
             dst.setText(0, 'Destination Address: %s' % pkt_parser.layer2['dst'])
+
+        elif pkt_parser.layer2['name'] == 'ARP':  # ARP
+            arp = QtWidgets.QTreeWidgetItem(self.ui.packetDetail)
+            arp.setText(0, 'ARP (%s)' % pkt_parser.layer2['type'])
+            hrd = QtWidgets.QTreeWidgetItem(arp)
+            hrd.setText(0, 'Hardware Type: %s' % pkt_parser.layer2['hrdType'])
+            p = QtWidgets.QTreeWidgetItem(arp)
+            p.setText(0, 'Protocol Type: %s' % pkt_parser.layer2['protocol'])
+            hrd_len = QtWidgets.QTreeWidgetItem(arp)
+            hrd_len.setText(0, 'Hardware size: %s' % pkt_parser.layer2['hrdLen'])
+            p_len = QtWidgets.QTreeWidgetItem(arp)
+            p_len.setText(0, 'Protocol size: %s' % pkt_parser.layer2['protocolLen'])
+            op = QtWidgets.QTreeWidgetItem(arp)
+            op.setText(0, 'Opcode: %s' % pkt_parser.layer2['op'])
+            smac = QtWidgets.QTreeWidgetItem(arp)
+            smac.setText(0, 'Sender MAC addresss: %s' % pkt_parser.layer2['smac'])
+            sip = QtWidgets.QTreeWidgetItem(arp)
+            sip.setText(0, 'Sender IP addresss: %s' % pkt_parser.layer2['sip'])
+            tmac = QtWidgets.QTreeWidgetItem(arp)
+            tmac.setText(0, 'Target MAC addresss: %s' % pkt_parser.layer2['tmac'])
+            tip = QtWidgets.QTreeWidgetItem(arp)
+            tip.setText(0, 'Sender IP addresss: %s' % pkt_parser.layer2['tip'])
+
         else:
             pass
 
