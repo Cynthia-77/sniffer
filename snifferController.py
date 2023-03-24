@@ -518,10 +518,57 @@ class SnifferController:
                 self.ui.packetsTable.setRowHidden(row, False)
                 continue
             pkt_parser = self.pkt_parsers[row]
+            if fl == 'ip':
+                fl = 'ipv4'
             if (pkt_parser.layer1['name'] is not None and pkt_parser.layer1['name'].lower() == fl) or (
                     pkt_parser.layer2['name'] is not None and pkt_parser.layer2['name'].lower() == fl) or (
                     pkt_parser.layer3['name'] is not None and pkt_parser.layer3['name'].lower() == fl) or (
                     pkt_parser.layer4['name'] is not None and pkt_parser.layer4['name'].lower() == fl):
                 self.ui.packetsTable.setRowHidden(row, False)
             else:
-                self.ui.packetsTable.setRowHidden(row, True)
+                index = fl.find('.')
+                index2 = fl.find('==')
+                if index != -1:
+                    protocol = fl[0:index]
+                    if protocol == 'ip':
+                        if fl[index2 + 2] == ' ':
+                            addr = fl[index2 + 3:]
+                        else:
+                            addr = fl[index2 + 2:]
+                        if pkt_parser.layer2['name'] == 'IPv4' and (
+                                pkt_parser.layer2['src'] == addr or pkt_parser.layer2['dst'] == addr):
+                            self.ui.packetsTable.setRowHidden(row, False)
+                        else:
+                            self.ui.packetsTable.setRowHidden(row, True)
+                    elif protocol == 'ipv6':
+                        if fl[index2 + 2] == ' ':
+                            addr = fl[index2 + 3:]
+                        else:
+                            addr = fl[index2 + 2:]
+                        if pkt_parser.layer2['name'] == 'IPv6' and (
+                                pkt_parser.layer2['src'] == addr or pkt_parser.layer2['dst'] == addr):
+                            self.ui.packetsTable.setRowHidden(row, False)
+                        else:
+                            self.ui.packetsTable.setRowHidden(row, True)
+                    elif protocol == 'tcp':
+                        if fl[index2 + 2] == ' ':
+                            port = fl[index2 + 3:]
+                        else:
+                            port = fl[index2 + 2:]
+                        if pkt_parser.layer3['name'] == 'TCP' and (
+                                str(pkt_parser.layer3['sport']) == port or str(pkt_parser.layer3['dport']) == port):
+                            self.ui.packetsTable.setRowHidden(row, False)
+                        else:
+                            self.ui.packetsTable.setRowHidden(row, True)
+                    elif protocol == 'udp':
+                        if fl[index2 + 2] == ' ':
+                            port = fl[index2 + 3:]
+                        else:
+                            port = fl[index2 + 2:]
+                        if pkt_parser.layer3['name'] == 'UDP' and (
+                                str(pkt_parser.layer3['sport']) == port or str(pkt_parser.layer3['dport']) == port):
+                            self.ui.packetsTable.setRowHidden(row, False)
+                        else:
+                            self.ui.packetsTable.setRowHidden(row, True)
+                else:
+                    self.ui.packetsTable.setRowHidden(row, True)
