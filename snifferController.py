@@ -29,7 +29,7 @@ class SnifferController:
         self.ui.startButton.clicked.connect(self.start)
         self.ui.stopButton.clicked.connect(self.stop)
         self.ui.resetButton.clicked.connect(self.reset)
-        self.ui.protocolFilterAfterCapture.activated.connect(self.filter)
+        # self.ui.filterAfterCapture.editingFinished.connect(self.filter)
         self.ui.packetsTable.itemClicked.connect(self.show_item_detail)
 
     def packet_callback(self, pkt_data):
@@ -53,18 +53,20 @@ class SnifferController:
 
     def start(self):
         print("start")
-        self.device = self.get_device()
         if self.sniffer is None:
             try:
                 self.sniffer = sniffer.Sniffer()
+                self.device = self.get_device()
                 self.sniffer.device = self.device
+                self.sniffer.filter = self.get_filter_before_capture()
+                print(self.get_filter_before_capture())
                 self.sniffer.HandleSignal.connect(self.packet_callback)
+                self.start_time = time.time()
+                print("sniff on " + self.device)
+                self.stop_flag = False
+                self.sniffer.start()
             except Exception as e:
                 print(e)
-            self.start_time = time.time()
-            print("sniff on " + self.device)
-            self.stop_flag = False
-            self.sniffer.start()
         elif self.stop_flag:  # 停止后重新开始抓包
             self.frame_index = 0
             self.packets = []
@@ -73,7 +75,9 @@ class SnifferController:
             self.clear_packet_detail()
             self.clear_packet_data()
 
+            self.device = self.get_device()
             self.sniffer.device = self.device
+            self.sniffer.filter = self.get_filter_before_capture()
             self.start_time = time.time()
             print("sniff on " + self.device)
             self.stop_flag = False
@@ -492,3 +496,6 @@ class SnifferController:
 
     def clear_packet_data(self):
         self.ui.packetData.clear()
+
+    def get_filter_before_capture(self):
+        return self.ui.filterBeforeCapture.text()
