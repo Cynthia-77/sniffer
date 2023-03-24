@@ -29,8 +29,10 @@ class PacketParser:
                        'recordType': None, 'adlen': None, 'numSrc': None, 'mulAddr': None, 'code': None}
         # 应用层 HTTP (HTTPS TLS DNS SSL FTP SSDP QUIC
         self.layer4 = {'name': None, 'type': None, 'method': None, 'url': None, 'version': None, 'headers': None,
-                       'host': None, 'userAgent': None, 'body': None, 'statusCode': None, 'responsePhrase': None,
-                       'dataLen': None, 'op': None, 'flags': None, 'id': None}
+                       'host': None, 'connection': None, 'userAgent': None, 'accept': None, 'referer': None,
+                       'accept-encoding': None, 'accept-language': None, 'body': None, 'status': None,
+                       'reason': None, 'data': None, 'content-length': None, 'content-type': None, 'dataLen': None,
+                       'op': None, 'flags': None, 'id': None}
 
     # 抓包监听
     def packet_callback(self, pkt_data):
@@ -101,6 +103,7 @@ class PacketParser:
         self.parse_layer2(eth.data)
 
     def parse_layer2(self, packet):  # 网络层
+        print('IP: %s' % len(packet))
         packet_type = type(packet)  # IPv4 IPv6 ARP
 
         # 判断数据报类型
@@ -275,6 +278,8 @@ class PacketParser:
         self.parse_layer3(packet.data)
 
     def parse_layer3(self, packet):  # 传输层
+        print('TCP: %s' % len(packet))
+
         if len(packet) == 0:  # 如果传输负载长度为0，即该包为单纯的arp包，没有负载，则丢弃
             return
 
@@ -505,6 +510,8 @@ class PacketParser:
         self.parse_layer4(packet.data)
 
     def parse_layer4(self, packet):  # 应用层
+        print('HTTP: %s' % len(packet))
+
         if len(packet) == 0:  # 如果应用层负载长度为0，即该包为单纯的tcp/udp包，没有负载，则丢弃
             return
 
@@ -512,69 +519,115 @@ class PacketParser:
         print(packet_type)
         print(packet)
 
-        try:
-            request = dpkt.http.Request(packet)
-            print("suc")
-            print('HTTP request: %s\n' % repr(request))
-        except (dpkt.dpkt.NeedData, dpkt.dpkt.UnpackError):
-            print("1")
-
         if self.layer3['sport'] == 80 or self.layer3['dport'] == 80:  # HTTP
             print("HTTP")
             # packet = dpkt.http.Message(packet)
             self.layer4['name'] = 'HTTP'
             self.info['protocol'] = 'HTTP'
 
-            # if packet.haslayer('HTTPRequest'):
-            #     self.info['info'] = ('%s %s %s' % (packet.sprintf("{HTTPRequest:%HTTPRequest.Method%}").strip("'"),
-            #                                        packet.sprintf("{HTTPRequest:%HTTPRequest.Path%}").strip("'"),
-            #                                        packet.sprintf("{HTTPRequest:%HTTPRequest.Http-Version%}").strip(
-            #                                            "'")))
-            # elif packet.haslayer('HTTPResponse'):
-            #     self.info['info'] = ('%s' % packet.sprintf("{HTTPResponse:%HTTPResponse.Status-Line%}").strip("'"))
+            try:  # Request
+                request = dpkt.http.Request(packet)
+                print("suc")
+                print('HTTP request: %s\n' % repr(request))
 
-            # if isinstance(packet, dpkt.http.Request):  # Request
-            #     self.layer4['type'] = 'Request'
-            #     self.layer4['method'] = packet.method
-            #     self.layer4['url'] = packet.uri
-            #     self.layer4['version'] = packet.version
-            #     self.layer4['headers'] = packet.headers
-            #     self.layer4['host'] = packet.headers['host']
-            #     self.layer4['userAgent'] = packet.headers['user-agent']
-            #     self.layer4['body'] = packet.body
-            #     self.layer4['dataLen'] = len(packet.body)
-            #
-            #     self.info['info'] = self.layer4['method'] + self.layer4['uri'] + self.layer4['version']
-            #
-            # elif isinstance(packet, dpkt.http.Response):  # Response
-            #     self.layer4['type'] = 'Response'
-            #     self.layer4['version'] = packet.version
-            #     self.layer4['statusCode'] = packet.status
-            #     self.layer4['responsePhrase'] = packet.reason
-            #     self.layer4['headers'] = packet.headers
-            #     self.layer4['body'] = packet.body
+                self.layer4['type'] = 'Request'
+                self.layer4['method'] = request.method
+                self.layer4['url'] = request.uri
+                self.layer4['version'] = request.version
+                self.layer4['headers'] = request.headers
+                self.layer4['host'] = request.headers['host']
+                self.layer4['connection'] = request.headers['connection']
+                self.layer4['userAgent'] = request.headers['user-agent']
+                self.layer4['accept'] = request.headers['accept']
+                self.layer4['referer'] = request.headers['referer']
+                self.layer4['accept-encoding'] = request.headers['accept-encoding']
+                self.layer4['accept-language'] = request.headers['accept-language']
+                self.layer4['dataLen'] = len(request.body)
 
-        elif isinstance(packet, dpkt.dns.DNS):  # DNS
-            self.layer4['id'] = '0x{:04x}'.format(packet.id)
-            op = packet.op
-            self.layer4['flags'] = '0x{:04x}'.format(op)
-            if op == 0x0100:
-                self.layer4['op'] = 'Standard query'
-                self.info['info'] = 'Standard query'
-            elif op == 0x8180:
-                self.layer4['op'] = 'Standard query response'
-                self.info['info'] = 'Standard query response'
+                self.info['info'] = self.layer4['method'] + ' ' + self.layer4['uri'] + ' HTTP/' + self.layer4['version']
 
-            self.info['protocol'] = 'DNS'
-            self.info['info'] += self.layer4['id']
+                print(self.info['info'])
+                print(self.layer4)
+
+            except (dpkt.dpkt.NeedData, dpkt.dpkt.UnpackError):
+                print("1")
+                pass
+
+            try:
+                response = dpkt.http.Response(packet)
+                print("suc")
+                print('HTTP response: %s\n' % repr(response))
+
+                self.layer4['type'] = 'Response'
+                self.layer4['version'] = response.version
+                self.layer4['status'] = response.status
+                self.layer4['reason'] = response.reason
+                self.layer4['headers'] = response.headers
+                self.layer4['body'] = response.body
+                self.layer4['data'] = response.data
+                self.layer4['content-length'] = response.headers['content-length']
+
+                self.info['info'] = 'HTTP/' + self.layer4['version'] + ' ' + self.layer4['status'] + ' ' + self.layer4[
+                    'reason']
+
+                if self.layer4['content-length'] > 0:
+                    self.layer4['content-type'] = response.headers['content-type']
+                    self.layer4['connection'] = response.headers['connection']
+                    self.info['info'] += '  (%s)' % self.layer4['content-type']
+
+                print(self.layer4)
+                print(self.info['info'])
+
+            except (dpkt.dpkt.NeedData, dpkt.dpkt.UnpackError):
+                print("2")
+                pass
+
+        elif self.layer3['sport'] == 443 or self.layer3['dport'] == 443:  # HTTPS
+            print("HTTPS")
+            # packet = dpkt.http.Message(packet)
+            self.layer4['name'] = 'HTTPS'
+            self.info['protocol'] = 'HTTPS'
+            self.info['info'] = 'Application Data'
+            self.layer4['content-type'] = 'Application Data'
+
+        elif self.layer3['sport'] == 53 or self.layer3['dport'] == 53:  # DNS
+            try:
+                dns = dpkt.dns.DNS(packet)
+                print("suc")
+                print('DNS: %s\n' % repr(dns))
+
+                print("DNS")
+
+                self.layer4['name'] = 'DNS'
+                self.info['protocol'] = 'DNS'
+
+                self.layer4['id'] = '0x{:04x}'.format(dns.id)
+                op = dns.op
+                self.layer4['flags'] = '0x{:04x}'.format(op)
+                if op == 0x0100:
+                    self.layer4['op'] = 'Standard query'
+                    self.info['info'] = 'Standard query'
+                elif op == 0x8180:
+                    self.layer4['op'] = 'Standard query response'
+                    self.info['info'] = 'Standard query response'
+
+                self.info['info'] += ' ' + self.layer4['id']
+
+                print(self.info['info'])
+                print(self.layer4)
+
+            except (dpkt.dpkt.NeedData, dpkt.dpkt.UnpackError):
+                print("3")
+                pass
 
         else:
-            print("Non HTTP packet type not supported ", packet.__class__.__name__)
+            print("Non HTTP/HTTPS/DNS packet type not supported ", packet.__class__.__name__)
 
-    # scapy抓包：
-    def catch_pack(self, device):
-        while True:
-            sniff(iface=device, prn=self.packet_callback, count=1)
+
+# scapy抓包：
+def catch_pack(self, device):
+    while True:
+        sniff(iface=device, prn=self.packet_callback, count=1)
 
 
 if __name__ == '__main__':

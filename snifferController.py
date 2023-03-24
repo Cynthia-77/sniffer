@@ -382,29 +382,51 @@ class SnifferController:
         if pkt_parser.layer4['name'] == 'HTTP':  # HTTP
             http = QtWidgets.QTreeWidgetItem(self.ui.packetDetail)
             http.setText(0, 'HTTP')
-            # if pkt_parser.layer4['type'] == 'Request':  # Request
-            #     method = QtWidgets.QTreeWidgetItem(http)
-            #     method.setText(0, 'Request Method: %s' % pkt_parser.layer4['method'])
-            #     uri = QtWidgets.QTreeWidgetItem(http)
-            #     uri.setText(0, 'Request URI: %s' % pkt_parser.layer4['uri'])
-            #     v = QtWidgets.QTreeWidgetItem(http)
-            #     v.setText(0, 'Request Version: %s' % pkt_parser.layer4['version'])
-            #     cl = QtWidgets.QTreeWidgetItem(http)
-            #     cl.setText(0, 'Content Length: %s' % pkt_parser.layer4['headers']['content-length'])
-            #     ct = QtWidgets.QTreeWidgetItem(http)
-            #     ct.setText(0, 'Content Type: %s' % pkt_parser.layer4['headers']['content-type'])
-            #     host = QtWidgets.QTreeWidgetItem(http)
-            #     host.setText(0, 'Host: %s' % pkt_parser.layer4['headers']['host'])
-            #     ua = QtWidgets.QTreeWidgetItem(http)
-            #     ua.setText(0, 'User-Agent: %s' % pkt_parser.layer4['headers']['user-agent'])
-            #     dl = QtWidgets.QTreeWidgetItem(http)
-            #     dl.setText(0, 'File Data: %s bytes' % pkt_parser.layer4['dataLen'])
-            #     data = QtWidgets.QTreeWidgetItem(self.ui.packetDetail)
-            #     data.setText(0, 'Data (%s bytes)' % pkt_parser.layer4['dataLen'])
-            #     d = QtWidgets.QTreeWidgetItem(data)
-            #     d.setText(0, 'Data: ' % pkt_parser.layer4['body'])
-            # elif pkt_parser.layer4['type'] == 'Response':  # Response
-            #     pass
+            if pkt_parser.layer4['type'] == 'Request':  # Request
+                d = QtWidgets.QTreeWidgetItem(http)
+                d.setText(0, '%s %s HTTP/%s' % (
+                    pkt_parser.layer4['method'], pkt_parser.layer4['uri'], pkt_parser.layer4['version']))
+                method = QtWidgets.QTreeWidgetItem(d)
+                method.setText(0, 'Request Method: %s' % pkt_parser.layer4['method'])
+                uri = QtWidgets.QTreeWidgetItem(d)
+                uri.setText(0, 'Request URI: %s' % pkt_parser.layer4['uri'])
+                v = QtWidgets.QTreeWidgetItem(d)
+                v.setText(0, 'Request Version: HTTP/%s' % pkt_parser.layer4['version'])
+                con = QtWidgets.QTreeWidgetItem(http)
+                con.setText(0, 'Connection: %s' % pkt_parser.layer4['connection'])
+                ua = QtWidgets.QTreeWidgetItem(http)
+                ua.setText(0, 'User-Agent: %s' % pkt_parser.layer4['userAgent'])
+                host = QtWidgets.QTreeWidgetItem(http)
+                host.setText(0, 'Host: %s' % pkt_parser.layer4['host'])
+
+            elif pkt_parser.layer4['type'] == 'Response':  # Response
+                d = QtWidgets.QTreeWidgetItem(http)
+                d.setText(0, 'HTTP/%s %s %s' % (
+                    pkt_parser.layer4['version'], pkt_parser.layer4['status'], pkt_parser.layer4['reason']))
+                v = QtWidgets.QTreeWidgetItem(d)
+                v.setText(0, 'Response Version: HTTP/%s' % pkt_parser.layer4['version'])
+                sc = QtWidgets.QTreeWidgetItem(d)
+                sc.setText(0, 'Status Code: %s' % pkt_parser.layer4['status'])
+                uri = QtWidgets.QTreeWidgetItem(d)
+                uri.setText(0, 'Response Phrase: %s' % pkt_parser.layer4['reason'])
+                data = ('0', '')
+                if pkt_parser.layer4['content-length'] is not None:
+                    cl = QtWidgets.QTreeWidgetItem(http)
+                    cl.setText(0, 'Content Length: %s' % pkt_parser.layer4['content-length'])
+                    data[0] = pkt_parser.layer4['content-length']
+                if pkt_parser.layer4['content-type'] is not None:
+                    ct = QtWidgets.QTreeWidgetItem(http)
+                    ct.setText(0, 'Content Type: %s' % pkt_parser.layer4['content-type'])
+                    dl = QtWidgets.QTreeWidgetItem(http)
+                    dl.setText(0, 'File Data: %s bytes' % pkt_parser.layer4['content-length'])
+                    data[1] = pkt_parser.layer4['content-type']
+                data = QtWidgets.QTreeWidgetItem(self.ui.packetDetail)
+                data.setText(0, 'Data (%s bytes) : %s' % (data[0], data[1]))
+                # d = QtWidgets.QTreeWidgetItem(data)
+                # d.setText(0, 'Data: ' % pkt_parser.layer4['body'])
+
+        elif pkt_parser.layer4['name'] == 'HTTPS':  # HTTPS
+            pass
         elif pkt_parser.layer4['name'] == 'DNS':  # DNS
             dns = QtWidgets.QTreeWidgetItem(self.ui.packetDetail)
             if self.layer4['op'] == 'Standard query':
