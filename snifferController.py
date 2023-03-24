@@ -16,7 +16,7 @@ class SnifferController:
         self.stop_flag = True  # 是否处于停止抓包状态
         self.start_time = None
         self.frame_index = 0
-        self.packets = []  # 用来显示data
+        # self.packets = []  # 用来显示data
         self.pkt_parsers = []  # 用来显示detail
         self.captures = []
 
@@ -29,7 +29,7 @@ class SnifferController:
         self.ui.startButton.clicked.connect(self.start)
         self.ui.stopButton.clicked.connect(self.stop)
         self.ui.resetButton.clicked.connect(self.reset)
-        # self.ui.filterAfterCapture.editingFinished.connect(self.filter)
+        self.ui.filterAfterCapture.editingFinished.connect(self.filter)
         self.ui.packetsTable.itemClicked.connect(self.show_item_detail)
 
     def packet_callback(self, pkt_data):
@@ -43,7 +43,7 @@ class SnifferController:
                 for timestamp, pkt in capture:  # 键值对，提取packet进行解码
                     print(pkt_data)
                     print(pkt)
-                    self.packets.append(pkt)
+                    # self.packets.append(pkt)
                     pkt_parser = packetParser.PacketParser(self.frame_index)
                     pkt_parser.parse(timestamp, pkt, self.start_time)
                     self.pkt_parsers.append(pkt_parser)
@@ -69,7 +69,7 @@ class SnifferController:
                 print(e)
         elif self.stop_flag:  # 停止后重新开始抓包
             self.frame_index = 0
-            self.packets = []
+            # self.packets = []
             self.pkt_parsers = []
             self.clear_packets_table()
             self.clear_packet_detail()
@@ -90,14 +90,18 @@ class SnifferController:
 
     def reset(self):
         pass
+        # self.clear_filter()
+        # table visible
 
     def filter(self):
-        pass
+        if self.stop_flag:  # 停止后过滤
+            fl = self.get_filter_after_capture()
+            self.set_table_display(fl)
 
     def show_item_detail(self):
         row = self.ui.packetsTable.currentRow()  # 获取当前行
         pkt_parser = self.pkt_parsers[row]
-        packet = self.packets[row]
+        # packet = self.packets[row]
         capture = self.captures[row]
 
         self.set_packet_detail(pkt_parser)
@@ -499,3 +503,25 @@ class SnifferController:
 
     def get_filter_before_capture(self):
         return self.ui.filterBeforeCapture.text()
+
+    def get_filter_after_capture(self):
+        return self.ui.filterAfterCapture.text()
+
+    def clear_filter(self):
+        self.ui.filterBeforeCapture.clear()
+        self.ui.filterAfterCapture.clear()
+
+    def set_table_display(self, fl):
+        rows = self.ui.packetsTable.rowCount()
+        for row in range(rows):
+            if fl == '':
+                self.ui.packetsTable.setRowHidden(row, False)
+                continue
+            pkt_parser = self.pkt_parsers[row]
+            if (pkt_parser.layer1['name'] is not None and pkt_parser.layer1['name'].lower() == fl) or (
+                    pkt_parser.layer2['name'] is not None and pkt_parser.layer2['name'].lower() == fl) or (
+                    pkt_parser.layer3['name'] is not None and pkt_parser.layer3['name'].lower() == fl) or (
+                    pkt_parser.layer4['name'] is not None and pkt_parser.layer4['name'].lower() == fl):
+                self.ui.packetsTable.setRowHidden(row, False)
+            else:
+                self.ui.packetsTable.setRowHidden(row, True)
