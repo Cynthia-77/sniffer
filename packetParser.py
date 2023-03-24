@@ -27,12 +27,12 @@ class PacketParser:
                        'checksum': None, 'urp': None, 'opts': None, 'optsLen': None, 'optsDetail': None,
                        'payload': None, 'type': None, 'rf1': None, 'rf2': None, 'ngr': None, 'recordTypeNum': None,
                        'recordType': None, 'adlen': None, 'numSrc': None, 'mulAddr': None, 'code': None}
-        # 应用层 HTTP (HTTPS TLS DNS SSL FTP SSDP QUIC
+        # 应用层 HTTP HTTPS DNS (TLS SSL FTP SSDP QUIC
         self.layer4 = {'name': None, 'type': None, 'method': None, 'url': None, 'version': None, 'headers': None,
                        'host': None, 'connection': None, 'userAgent': None, 'accept': None, 'referer': None,
                        'accept-encoding': None, 'accept-language': None, 'body': None, 'status': None,
                        'reason': None, 'data': None, 'content-length': None, 'content-type': None, 'dataLen': None,
-                       'op': None, 'flags': None, 'id': None}
+                       'op': None, 'flags': None, 'id': None, 'qd': None, 'ans': None}
 
     # 抓包监听
     def packet_callback(self, pkt_data):
@@ -515,7 +515,7 @@ class PacketParser:
         if len(packet) == 0:  # 如果应用层负载长度为0，即该包为单纯的tcp/udp包，没有负载，则丢弃
             return
 
-        packet_type = type(packet)  # HTTP
+        packet_type = type(packet)  # HTTP HTTPS DNS
         print(packet_type)
         print(packet)
 
@@ -590,6 +590,9 @@ class PacketParser:
             self.info['info'] = 'Application Data'
             self.layer4['content-type'] = 'Application Data'
 
+            print(self.layer4)
+            print(self.info['info'])
+
         elif self.layer3['sport'] == 53 or self.layer3['dport'] == 53:  # DNS
             try:
                 dns = dpkt.dns.DNS(packet)
@@ -606,12 +609,35 @@ class PacketParser:
                 self.layer4['flags'] = '0x{:04x}'.format(op)
                 if op == 0x0100:
                     self.layer4['op'] = 'Standard query'
-                    self.info['info'] = 'Standard query'
+                    self.layer4['qd'] = dns.qd[0].name
+                    self.info['info'] += 'Standard query %s %s' % (self.layer4['id'], self.layer4['qd'])
                 elif op == 0x8180:
                     self.layer4['op'] = 'Standard query response'
-                    self.info['info'] = 'Standard query response'
-
-                self.info['info'] += ' ' + self.layer4['id']
+                    self.layer4['qd'] = dns.qd[0].name
+                    self.info['info'] += 'Standard query response %s %s' % (self.layer4['id'], self.layer4['qd'])
+                    ans = []
+                    pkt_ans = dns.an
+                    for rr in pkt_ans:
+                        an = {'name': rr.name, 'type': '', 'typeInfo': '', 'ttl': rr.ttl, 'dataLen': rr.rlen,
+                              'cname': None}
+                        t = rr.type
+                        if t == 1:
+                            an['type'] = 'A (Host Address) (1)'
+                            an['typeInfo'] = 'A'
+                        elif t == 5:
+                            an['type'] = 'CNAME (5)'
+                            an['typeInfo'] = 'CNAME'
+                        else:
+                            an['type'] = t
+                            an['typeInfo'] = t
+                        if hasattr(rr, 'cname'):
+                            an['cname'] = rr.cname
+                            self.info['info'] += ' CNAME %s' % rr.cname
+                        ans.append(an)
+                    self.layer4['ans'] = ans
+                else:
+                    self.layer4['op'] = ''
+                    self.info['info'] += 'DNS %s %s' % (self.layer4['id'], self.layer4['qd'])
 
                 print(self.info['info'])
                 print(self.layer4)

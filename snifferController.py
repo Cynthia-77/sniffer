@@ -426,17 +426,56 @@ class SnifferController:
                 # d.setText(0, 'Data: ' % pkt_parser.layer4['body'])
 
         elif pkt_parser.layer4['name'] == 'HTTPS':  # HTTPS
-            pass
+            https = QtWidgets.QTreeWidgetItem(self.ui.packetDetail)
+            https.setText(0, 'HTTPS')
+            ct = QtWidgets.QTreeWidgetItem(https)
+            ct.setText(0, 'Content Type: %s' % pkt_parser.layer4['content-type'])
+
         elif pkt_parser.layer4['name'] == 'DNS':  # DNS
             dns = QtWidgets.QTreeWidgetItem(self.ui.packetDetail)
-            if self.layer4['op'] == 'Standard query':
+            if pkt_parser.layer4['op'] == 'Standard query':
                 dns.setText(0, 'DNS (query)')
-            else:
+            elif pkt_parser.layer4['op'] == 'Standard query response':
                 dns.setText(0, 'DNS (response)')
+            else:
+                dns.setText(0, 'DNS')
             id1 = QtWidgets.QTreeWidgetItem(dns)
             id1.setText(0, 'Transaction ID: %s' % pkt_parser.layer4['id'])
             flags = QtWidgets.QTreeWidgetItem(dns)
             flags.setText(0, 'Flags: %s %s' % (pkt_parser.layer4['flags'], pkt_parser.layer4['op']))
+            if pkt_parser.layer4['op'] == 'Standard query' or pkt_parser.layer4['op'] == 'Standard query response':
+                qs = QtWidgets.QTreeWidgetItem(dns)
+                qs.setText(0, 'Questions: 1')
+            else:
+                qs = QtWidgets.QTreeWidgetItem(dns)
+                qs.setText(0, 'Questions: 0')
+            if pkt_parser.layer4['op'] == 'Standard query response':
+                ar = QtWidgets.QTreeWidgetItem(dns)
+                ar.setText(0, 'Answer RRs: %s' % len(pkt_parser.layer4['ans']))
+            else:
+                ar = QtWidgets.QTreeWidgetItem(dns)
+                ar.setText(0, 'Answer RRs: 0')
+            if pkt_parser.layer4['op'] == 'Standard query' or pkt_parser.layer4['op'] == 'Standard query response':
+                q = QtWidgets.QTreeWidgetItem(dns)
+                q.setText(0, 'Queries')
+                qn = QtWidgets.QTreeWidgetItem(q)
+                qn.setText(0, 'Name: %s' % pkt_parser.layer4['qd'])
+            if pkt_parser.layer4['op'] == 'Standard query response':
+                a = QtWidgets.QTreeWidgetItem(dns)
+                a.setText(0, 'Answers')
+                for ans in pkt_parser.layer4['ans']:
+                    an = QtWidgets.QTreeWidgetItem(a)
+                    an.setText(0, '%s: type %s, cname %s' % (ans['name'], ans['typeInfo'], ans['cname']))
+                    name = QtWidgets.QTreeWidgetItem(an)
+                    name.setText(0, 'Name: %s' % ans['name'])
+                    typ = QtWidgets.QTreeWidgetItem(an)
+                    typ.setText(0, 'Type: %s' % ans['type'])
+                    ttl = QtWidgets.QTreeWidgetItem(an)
+                    ttl.setText(0, 'Time to live: %s' % ans['ttl'])
+                    dl = QtWidgets.QTreeWidgetItem(an)
+                    dl.setText(0, 'Data Length: %s' % ans['dataLen'])
+                    cn = QtWidgets.QTreeWidgetItem(an)
+                    cn.setText(0, 'CNAME: %s' % ans['cname'])
         else:
             pass
 
