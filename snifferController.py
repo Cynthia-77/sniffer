@@ -89,14 +89,17 @@ class SnifferController:
             self.sniffer.stop()
 
     def reset(self):
-        pass
-        # self.clear_filter()
-        # table visible
+        self.clear_filter_after_capture()
+        self.set_table_display('')
+        self.clear_packet_detail()
+        self.clear_packet_data()
 
     def filter(self):
         if self.stop_flag:  # 停止后过滤
             fl = self.get_filter_after_capture()
             self.set_table_display(fl)
+            self.clear_packet_detail()
+            self.clear_packet_data()
 
     def show_item_detail(self):
         row = self.ui.packetsTable.currentRow()  # 获取当前行
@@ -507,8 +510,7 @@ class SnifferController:
     def get_filter_after_capture(self):
         return self.ui.filterAfterCapture.text()
 
-    def clear_filter(self):
-        self.ui.filterBeforeCapture.clear()
+    def clear_filter_after_capture(self):
         self.ui.filterAfterCapture.clear()
 
     def set_table_display(self, fl):
