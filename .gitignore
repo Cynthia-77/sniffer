@@ -1,6 +1,7 @@
 .idea
 test*.py
 *.pcap
+parserWinpcapy.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
