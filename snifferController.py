@@ -16,7 +16,7 @@ class SnifferController:
         self.stop_flag = True  # 是否处于停止抓包状态
         self.start_time = None
         self.frame_index = 0
-        # self.packets = []  # 用来显示data
+        self.packets = []
         self.pkt_parsers = []  # 用来显示detail
         self.captures = []
 
@@ -36,6 +36,7 @@ class SnifferController:
         self.captures.append(pkt_data)
         self.frame_index += 1
         wrpcap('packet.pcap', [pkt_data])
+        self.packets.append(pkt_data)
 
         try:
             with open('packet.pcap', 'rb') as f:
@@ -87,6 +88,7 @@ class SnifferController:
         if self.sniffer is not None:
             self.stop_flag = True
             self.sniffer.stop()
+            wrpcap('packets.pcap', self.packets)
 
     def reset(self):
         self.clear_filter_after_capture()
@@ -396,11 +398,11 @@ class SnifferController:
             if pkt_parser.layer4['type'] == 'Request':  # Request
                 d = QtWidgets.QTreeWidgetItem(http)
                 d.setText(0, '%s %s HTTP/%s' % (
-                    pkt_parser.layer4['method'], pkt_parser.layer4['uri'], pkt_parser.layer4['version']))
+                    pkt_parser.layer4['method'], pkt_parser.layer4['url'], pkt_parser.layer4['version']))
                 method = QtWidgets.QTreeWidgetItem(d)
                 method.setText(0, 'Request Method: %s' % pkt_parser.layer4['method'])
                 uri = QtWidgets.QTreeWidgetItem(d)
-                uri.setText(0, 'Request URI: %s' % pkt_parser.layer4['uri'])
+                uri.setText(0, 'Request URI: %s' % pkt_parser.layer4['url'])
                 v = QtWidgets.QTreeWidgetItem(d)
                 v.setText(0, 'Request Version: HTTP/%s' % pkt_parser.layer4['version'])
                 con = QtWidgets.QTreeWidgetItem(http)
@@ -420,19 +422,22 @@ class SnifferController:
                 sc.setText(0, 'Status Code: %s' % pkt_parser.layer4['status'])
                 uri = QtWidgets.QTreeWidgetItem(d)
                 uri.setText(0, 'Response Phrase: %s' % pkt_parser.layer4['reason'])
-                data = ('0', '')
+                cl1 = 0
+                ct1 = ''
+                con = QtWidgets.QTreeWidgetItem(http)
+                con.setText(0, 'Connection: %s' % pkt_parser.layer4['connection'])
                 if pkt_parser.layer4['content-length'] is not None:
                     cl = QtWidgets.QTreeWidgetItem(http)
                     cl.setText(0, 'Content Length: %s' % pkt_parser.layer4['content-length'])
-                    data[0] = pkt_parser.layer4['content-length']
+                    cl1 = pkt_parser.layer4['content-length']
                 if pkt_parser.layer4['content-type'] is not None:
                     ct = QtWidgets.QTreeWidgetItem(http)
                     ct.setText(0, 'Content Type: %s' % pkt_parser.layer4['content-type'])
                     dl = QtWidgets.QTreeWidgetItem(http)
                     dl.setText(0, 'File Data: %s bytes' % pkt_parser.layer4['content-length'])
-                    data[1] = pkt_parser.layer4['content-type']
+                    ct1 = pkt_parser.layer4['content-type']
                 data = QtWidgets.QTreeWidgetItem(self.ui.packetDetail)
-                data.setText(0, 'Data (%s bytes) : %s' % (data[0], data[1]))
+                data.setText(0, 'Data (%s bytes) : %s' % (cl1, ct1))
                 # d = QtWidgets.QTreeWidgetItem(data)
                 # d.setText(0, 'Data: ' % pkt_parser.layer4['body'])
 
@@ -442,14 +447,14 @@ class SnifferController:
             ct = QtWidgets.QTreeWidgetItem(https)
             ct.setText(0, 'Content Type: %s' % pkt_parser.layer4['content-type'])
 
-        elif pkt_parser.layer4['name'] == 'DNS':  # DNS
+        elif pkt_parser.layer4['name'] == 'DNS' or pkt_parser.layer4['name'] == 'MDNS':  # DNS/MDNS
             dns = QtWidgets.QTreeWidgetItem(self.ui.packetDetail)
             if pkt_parser.layer4['op'] == 'Standard query':
-                dns.setText(0, 'DNS (query)')
+                dns.setText(0, '%s (query)' % pkt_parser.layer4['name'])
             elif pkt_parser.layer4['op'] == 'Standard query response':
-                dns.setText(0, 'DNS (response)')
+                dns.setText(0, '%s (response)' % pkt_parser.layer4['name'])
             else:
-                dns.setText(0, 'DNS')
+                dns.setText(0, '%s' % pkt_parser.layer4['name'])
             id1 = QtWidgets.QTreeWidgetItem(dns)
             id1.setText(0, 'Transaction ID: %s' % pkt_parser.layer4['id'])
             flags = QtWidgets.QTreeWidgetItem(dns)
@@ -487,6 +492,12 @@ class SnifferController:
                     dl.setText(0, 'Data Length: %s' % ans['dataLen'])
                     cn = QtWidgets.QTreeWidgetItem(an)
                     cn.setText(0, 'CNAME: %s' % ans['cname'])
+
+        elif pkt_parser.layer4['name'] == 'SSDP':  # SSDP
+            ssdp = QtWidgets.QTreeWidgetItem(self.ui.packetDetail)
+            ssdp.setText(0, 'SSDP')
+            pass
+
         else:
             pass
 

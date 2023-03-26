@@ -27,7 +27,7 @@ class PacketParser:
                        'checksum': None, 'urp': None, 'opts': None, 'optsLen': None, 'optsDetail': None,
                        'payload': None, 'type': None, 'rf1': None, 'rf2': None, 'ngr': None, 'recordTypeNum': None,
                        'recordType': None, 'adlen': None, 'numSrc': None, 'mulAddr': None, 'code': None}
-        # 应用层 HTTP HTTPS(TLS) DNS (SSDP SSL FTP QUIC
+        # 应用层 HTTP HTTPS(TLS) DNS MDNS (SSDP SSL FTP QUIC
         self.layer4 = {'name': None, 'type': None, 'method': None, 'url': None, 'version': None, 'headers': None,
                        'host': None, 'connection': None, 'userAgent': None, 'accept': None, 'referer': None,
                        'accept-encoding': None, 'accept-language': None, 'body': None, 'status': None,
@@ -57,7 +57,7 @@ class PacketParser:
 
         self.info['index'] = str(self.frame_index)
         self.info['timestamp'] = str(timestamp)
-        self.info['time'] = str(pkt_time)
+        self.info['time'] = '%.6f' % pkt_time
         self.info['curTime'] = current_time
         self.info['len'] = str(pkt_len)
         self.info['pktData'] = pkt_data
@@ -518,7 +518,7 @@ class PacketParser:
         if len(packet) == 0:  # 如果应用层负载长度为0，即该包为单纯的tcp/udp包，没有负载，则丢弃
             return
 
-        packet_type = type(packet)  # HTTP HTTPS(TLS) DNS
+        packet_type = type(packet)  # HTTP HTTPS(TLS) DNS MDNS
         print(packet_type)
         print(packet)
 
@@ -537,17 +537,17 @@ class PacketParser:
                 self.layer4['method'] = request.method
                 self.layer4['url'] = request.uri
                 self.layer4['version'] = request.version
-                self.layer4['headers'] = request.headers
+                # self.layer4['headers'] = request.headers
                 self.layer4['host'] = request.headers['host']
                 self.layer4['connection'] = request.headers['connection']
                 self.layer4['userAgent'] = request.headers['user-agent']
-                self.layer4['accept'] = request.headers['accept']
-                self.layer4['referer'] = request.headers['referer']
-                self.layer4['accept-encoding'] = request.headers['accept-encoding']
-                self.layer4['accept-language'] = request.headers['accept-language']
-                self.layer4['dataLen'] = len(request.body)
+                # self.layer4['accept'] = request.headers['accept']
+                # self.layer4['referer'] = request.headers['referer']
+                # self.layer4['accept-encoding'] = request.headers['accept-encoding']
+                # self.layer4['accept-language'] = request.headers['accept-language']
+                # self.layer4['dataLen'] = len(request.body)
 
-                self.info['info'] = self.layer4['method'] + ' ' + self.layer4['uri'] + ' HTTP/' + self.layer4['version']
+                self.info['info'] = self.layer4['method'] + ' ' + self.layer4['url'] + ' HTTP/' + self.layer4['version']
 
                 print(self.info['info'])
                 print(self.layer4)
@@ -565,15 +565,15 @@ class PacketParser:
                 self.layer4['version'] = response.version
                 self.layer4['status'] = response.status
                 self.layer4['reason'] = response.reason
-                self.layer4['headers'] = response.headers
-                self.layer4['body'] = response.body
-                self.layer4['data'] = response.data
+                # self.layer4['headers'] = response.headers
+                # self.layer4['body'] = response.body
+                # self.layer4['data'] = response.data
                 self.layer4['content-length'] = response.headers['content-length']
 
                 self.info['info'] = 'HTTP/' + self.layer4['version'] + ' ' + self.layer4['status'] + ' ' + self.layer4[
                     'reason']
 
-                if self.layer4['content-length'] > 0:
+                if int(self.layer4['content-length']) > 0:
                     self.layer4['content-type'] = response.headers['content-type']
                     self.layer4['connection'] = response.headers['connection']
                     self.info['info'] += '  (%s)' % self.layer4['content-type']
@@ -596,51 +596,66 @@ class PacketParser:
             print(self.layer4)
             print(self.info['info'])
 
-        elif self.layer3['sport'] == 53 or self.layer3['dport'] == 53:  # DNS
+        elif self.layer3['sport'] == 53 or self.layer3['dport'] == 53 or \
+                self.layer3['sport'] == 5353 or self.layer3['dport'] == 5353:  # DNS/MDNS
             try:
                 dns = dpkt.dns.DNS(packet)
                 print("suc")
-                print('DNS: %s\n' % repr(dns))
+                print('DNS/MDNS: %s\n' % repr(dns))
 
-                print("DNS")
-
-                self.layer4['name'] = 'DNS'
-                self.info['protocol'] = 'DNS'
+                print("DNS/MDNS")
 
                 self.layer4['id'] = '0x{:04x}'.format(dns.id)
                 op = dns.op
                 self.layer4['flags'] = '0x{:04x}'.format(op)
-                if op == 0x0100:
-                    self.layer4['op'] = 'Standard query'
-                    self.layer4['qd'] = dns.qd[0].name
-                    self.info['info'] += 'Standard query %s %s' % (self.layer4['id'], self.layer4['qd'])
-                elif op == 0x8180:
-                    self.layer4['op'] = 'Standard query response'
-                    self.layer4['qd'] = dns.qd[0].name
-                    self.info['info'] += 'Standard query response %s %s' % (self.layer4['id'], self.layer4['qd'])
-                    ans = []
-                    pkt_ans = dns.an
-                    for rr in pkt_ans:
-                        an = {'name': rr.name, 'type': '', 'typeInfo': '', 'ttl': rr.ttl, 'dataLen': rr.rlen,
-                              'cname': None}
-                        t = rr.type
-                        if t == 1:
-                            an['type'] = 'A (Host Address) (1)'
-                            an['typeInfo'] = 'A'
-                        elif t == 5:
-                            an['type'] = 'CNAME (5)'
-                            an['typeInfo'] = 'CNAME'
-                        else:
-                            an['type'] = t
-                            an['typeInfo'] = t
-                        if hasattr(rr, 'cname'):
-                            an['cname'] = rr.cname
-                            self.info['info'] += ' CNAME %s' % rr.cname
-                        ans.append(an)
-                    self.layer4['ans'] = ans
-                else:
-                    self.layer4['op'] = ''
-                    self.info['info'] += 'DNS %s %s' % (self.layer4['id'], self.layer4['qd'])
+
+                if self.layer3['sport'] == 53 or self.layer3['dport'] == 53: # DNS
+                    self.layer4['name'] = 'DNS'
+                    self.info['protocol'] = 'DNS'
+
+                    if op == 0x0100:
+                        self.layer4['op'] = 'Standard query'
+                        self.layer4['qd'] = dns.qd[0].name
+                        self.info['info'] += 'Standard query %s %s' % (self.layer4['id'], self.layer4['qd'])
+                    elif op == 0x8180:
+                        self.layer4['op'] = 'Standard query response'
+                        self.layer4['qd'] = dns.qd[0].name
+                        self.info['info'] += 'Standard query response %s %s' % (self.layer4['id'], self.layer4['qd'])
+                        ans = []
+                        pkt_ans = dns.an
+                        for rr in pkt_ans:
+                            an = {'name': rr.name, 'type': '', 'typeInfo': '', 'ttl': rr.ttl, 'dataLen': rr.rlen,
+                                  'cname': None}
+                            t = rr.type
+                            if t == 1:
+                                an['type'] = 'A (Host Address) (1)'
+                                an['typeInfo'] = 'A'
+                            elif t == 5:
+                                an['type'] = 'CNAME (5)'
+                                an['typeInfo'] = 'CNAME'
+                            else:
+                                an['type'] = t
+                                an['typeInfo'] = t
+                            if hasattr(rr, 'cname'):
+                                an['cname'] = rr.cname
+                                self.info['info'] += ' CNAME %s' % rr.cname
+                            ans.append(an)
+                        self.layer4['ans'] = ans
+                    else:
+                        self.layer4['op'] = ''
+                        self.info['info'] += 'DNS %s %s' % (self.layer4['id'], self.layer4['qd'])
+
+                else:  # MDNS
+                    self.layer4['name'] = 'MDNS'
+                    self.info['protocol'] = 'MDNS'
+
+                    if op == 0x0000:
+                        self.layer4['op'] = 'Standard query'
+                        self.layer4['qd'] = dns.qd[0].name
+                        self.info['info'] += 'Standard query %s %s' % (self.layer4['id'], self.layer4['qd'])
+                    else:
+                        self.layer4['op'] = ''
+                        self.info['info'] += 'MDNS %s %s' % (self.layer4['id'], self.layer4['qd'])
 
                 print(self.info['info'])
                 print(self.layer4)
@@ -650,11 +665,12 @@ class PacketParser:
                 pass
 
         elif self.layer3['sport'] == 1900 or self.layer3['dport'] == 1900:  # SSDP
+            self.layer4['name'] = 'SSDP'
+            self.info['protocol'] = 'SSDP'
             pass
 
         else:
             print("Non HTTP/HTTPS/DNS packet type not supported ", packet.__class__.__name__)
-
 
 # scapy抓包：
 # def catch_pack(self, device):
