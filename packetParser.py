@@ -34,21 +34,21 @@ class PacketParser:
                        'reason': None, 'data': None, 'content-length': None, 'content-type': None, 'dataLen': None,
                        'op': None, 'flags': None, 'id': None, 'qd': None, 'ans': None}
 
-    # 抓包监听
-    def packet_callback(self, pkt_data):
-        wrpcap('packet.pcap', [pkt_data])
-
-        # global frame_index
-        frame_index = 0
-        frame_index += 1
-
-        try:
-            with open('packet.pcap', 'rb') as f:
-                capture = dpkt.pcap.Reader(f)
-                for timestamp, packet in capture:  # 键值对，提取packet进行解码
-                    self.parse(frame_index, timestamp, packet)
-        except Exception as e:
-            print(e)
+    # # 抓包监听
+    # def packet_callback(self, pkt_data):
+    #     wrpcap('packet.pcap', [pkt_data])
+    #
+    #     # global frame_index
+    #     frame_index = 0
+    #     frame_index += 1
+    #
+    #     try:
+    #         with open('packet.pcap', 'rb') as f:
+    #             capture = dpkt.pcap.Reader(f)
+    #             for timestamp, packet in capture:  # 键值对，提取packet进行解码
+    #                 self.parse(frame_index, timestamp, packet)
+    #     except Exception as e:
+    #         print(e)
 
     def parse(self, timestamp, pkt_data, start_time):
         current_time = time.strftime('%Y-%m-%d %H:%M:%S', (time.localtime()))
@@ -657,37 +657,37 @@ class PacketParser:
 
 
 # scapy抓包：
-def catch_pack(self, device):
-    while True:
-        sniff(iface=device, prn=self.packet_callback, count=1)
+# def catch_pack(self, device):
+#     while True:
+#         sniff(iface=device, prn=self.packet_callback, count=1)
 
 
-if __name__ == '__main__':
-    with open('http.pcap', 'rb') as f:
-        capture = dpkt.pcap.Reader(f)
-        # For each packet in the pcap process the contents
-        for timestamp, buf in capture:
-            pkt_parser = PacketParser(0)
-            start_time = time.time()
-            pkt_parser.parse(timestamp, buf, start_time)
-
-    # Return a list of all the devices detected on the machine
-    devices = []
-    for i in repr(conf.route).split('\n')[1:]:
-        tmp = re.search(r'[a-zA-Z](.*)[a-zA-Z0-9]', i).group()[0:44].rstrip()
-        if len(tmp) > 0:
-            devices.append(tmp)
-    devices = list(set(devices))
-    devices.sort()
-
-    print(devices)
-
-    print("------------------------------------------------")
-
-    deviceIndex = int(input("请输入你想要监听的网卡序号: "))
-
-    device = devices[deviceIndex]
-
-    print(device)
-
-    PacketParser.catch_pack(device)
+# if __name__ == '__main__':
+#     with open('http.pcap', 'rb') as f:
+#         capture = dpkt.pcap.Reader(f)
+#         # For each packet in the pcap process the contents
+#         for timestamp, buf in capture:
+#             pkt_parser = PacketParser(0)
+#             start_time = time.time()
+#             pkt_parser.parse(timestamp, buf, start_time)
+#
+#     # Return a list of all the devices detected on the machine
+#     devices = []
+#     for i in repr(conf.route).split('\n')[1:]:
+#         tmp = re.search(r'[a-zA-Z](.*)[a-zA-Z0-9]', i).group()[0:44].rstrip()
+#         if len(tmp) > 0:
+#             devices.append(tmp)
+#     devices = list(set(devices))
+#     devices.sort()
+#
+#     print(devices)
+#
+#     print("------------------------------------------------")
+#
+#     deviceIndex = int(input("请输入你想要监听的网卡序号: "))
+#
+#     device = devices[deviceIndex]
+#
+#     print(device)
+#
+#     PacketParser.catch_pack(device)
