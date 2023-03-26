@@ -667,7 +667,10 @@ class PacketParser:
         elif self.layer3['sport'] == 1900 or self.layer3['dport'] == 1900:  # SSDP
             self.layer4['name'] = 'SSDP'
             self.info['protocol'] = 'SSDP'
-            pass
+            self.info['info'] = ''
+
+            print(self.layer4)
+            print(self.info['info'])
 
         else:
             print("Non HTTP/HTTPS/DNS packet type not supported ", packet.__class__.__name__)

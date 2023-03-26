@@ -496,7 +496,6 @@ class SnifferController:
         elif pkt_parser.layer4['name'] == 'SSDP':  # SSDP
             ssdp = QtWidgets.QTreeWidgetItem(self.ui.packetDetail)
             ssdp.setText(0, 'SSDP')
-            pass
 
         else:
             pass
