@@ -36,7 +36,6 @@ class Sniffer(QtCore.QThread):
             self.mutex_1.lock()
             if self.cond_flag:
                 self.cond.wait(self.mutex_1)
-            print("123")
             print(self.filter)
             try:
                 sniff(filter=self.filter, iface=self.device, prn=lambda x: self.HandleSignal.emit(x), count=1, timeout=2)
