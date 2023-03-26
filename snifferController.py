@@ -436,9 +436,9 @@ class SnifferController:
                 # d = QtWidgets.QTreeWidgetItem(data)
                 # d.setText(0, 'Data: ' % pkt_parser.layer4['body'])
 
-        elif pkt_parser.layer4['name'] == 'HTTPS':  # HTTPS
+        elif pkt_parser.layer4['name'] == 'TLS':  # HTTPS (TLS)
             https = QtWidgets.QTreeWidgetItem(self.ui.packetDetail)
-            https.setText(0, 'HTTPS')
+            https.setText(0, 'TLS')
             ct = QtWidgets.QTreeWidgetItem(https)
             ct.setText(0, 'Content Type: %s' % pkt_parser.layer4['content-type'])
 

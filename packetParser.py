@@ -27,7 +27,7 @@ class PacketParser:
                        'checksum': None, 'urp': None, 'opts': None, 'optsLen': None, 'optsDetail': None,
                        'payload': None, 'type': None, 'rf1': None, 'rf2': None, 'ngr': None, 'recordTypeNum': None,
                        'recordType': None, 'adlen': None, 'numSrc': None, 'mulAddr': None, 'code': None}
-        # 应用层 HTTP HTTPS DNS (TLS SSL FTP SSDP QUIC
+        # 应用层 HTTP HTTPS(TLS) DNS (SSDP SSL FTP QUIC
         self.layer4 = {'name': None, 'type': None, 'method': None, 'url': None, 'version': None, 'headers': None,
                        'host': None, 'connection': None, 'userAgent': None, 'accept': None, 'referer': None,
                        'accept-encoding': None, 'accept-language': None, 'body': None, 'status': None,
@@ -504,6 +504,9 @@ class PacketParser:
 
             self.info['protocol'] = 'ICMPv6'
 
+        elif isinstance(packet, dpkt.icmp.ICMP):  # ICMP
+            pass
+
         else:
             print("Non TCP/UDP/IGMP/ICMPv6 packet type not supported ", packet.__class__.__name__)
 
@@ -515,7 +518,7 @@ class PacketParser:
         if len(packet) == 0:  # 如果应用层负载长度为0，即该包为单纯的tcp/udp包，没有负载，则丢弃
             return
 
-        packet_type = type(packet)  # HTTP HTTPS DNS
+        packet_type = type(packet)  # HTTP HTTPS(TLS) DNS
         print(packet_type)
         print(packet)
 
@@ -582,11 +585,11 @@ class PacketParser:
                 print("2")
                 pass
 
-        elif self.layer3['sport'] == 443 or self.layer3['dport'] == 443:  # HTTPS
-            print("HTTPS")
+        elif self.layer3['sport'] == 443 or self.layer3['dport'] == 443:  # HTTPS (TLS)
+            print("HTTPS (TLS)")
             # packet = dpkt.http.Message(packet)
-            self.layer4['name'] = 'HTTPS'
-            self.info['protocol'] = 'HTTPS'
+            self.layer4['name'] = 'TLS'
+            self.info['protocol'] = 'TLS'
             self.info['info'] = 'Application Data'
             self.layer4['content-type'] = 'Application Data'
 
@@ -645,6 +648,9 @@ class PacketParser:
             except (dpkt.dpkt.NeedData, dpkt.dpkt.UnpackError):
                 print("3")
                 pass
+
+        elif self.layer3['sport'] == 1900 or self.layer3['dport'] == 1900:  # SSDP
+            pass
 
         else:
             print("Non HTTP/HTTPS/DNS packet type not supported ", packet.__class__.__name__)
